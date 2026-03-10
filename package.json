@@ -1,33 +1,34 @@
 {
-  "name": "openai-cost",
-  "version": "1.0.0",
-  "description": "OpenAI token usage cost calculator and fetch-based call tracker utilities.",
-  "main": "index.js",
-  "directories": {
-    "example": "examples"
-  },
-  "scripts": {
-    "sample:comparator": "tsx examples/openai_cost_comparator.ts",
-    "sample:basic": "tsx examples/openai_cost_example.ts",
-    "sample:tracker": "tsx examples/openai_cost_tracker_example.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "openai",
-    "cost",
-    "token-usage",
-    "tracker"
-  ],
-  "author": "",
-  "license": "MIT",
-  "type": "commonjs",
-  "devDependencies": {
-    "@keyv/sqlite": "^4.0.8",
-    "@types/node": "^25.4.0",
-    "chalk": "^5.6.2",
-    "openai-cache": "^1.0.14"
-  },
-  "dependencies": {
-    "openai": "^6.27.0"
-  }
+	"name": "openai-cost",
+	"version": "1.0.0",
+	"description": "OpenAI token usage cost calculator and fetch-based call tracker utilities.",
+	"main": "index.js",
+	"directories": {
+		"example": "examples"
+	},
+	"scripts": {
+		"sample:comparator": "tsx examples/openai_cost_comparator.ts",
+		"sample:basic": "tsx examples/openai_cost_example.ts",
+		"sample:tracker": "tsx examples/openai_cost_tracker_example.ts",
+		"publish:all": "npm run build && npm version patch && npm publish --access public",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [
+		"openai",
+		"cost",
+		"token-usage",
+		"tracker"
+	],
+	"author": "",
+	"license": "MIT",
+	"type": "commonjs",
+	"devDependencies": {
+		"@keyv/sqlite": "^4.0.8",
+		"@types/node": "^25.4.0",
+		"chalk": "^5.6.2",
+		"openai-cache": "^1.0.14"
+	},
+	"dependencies": {
+		"openai": "^6.27.0"
+	}
 }
