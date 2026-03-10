@@ -1,0 +1,5 @@
+# ignore openai-cache
+.openai_cache.sqlite
+
+# ignore OpenAICostSampleDbHelper
+.openai_cost_sample_db.json
