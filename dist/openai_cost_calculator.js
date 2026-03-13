@@ -1,0 +1,362 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OpenAiCostCalculator = exports.pricingPerModel = void 0;
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//	from https://developers.openai.com/api/docs/pricing
+//
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// from https://developers.openai.com/api/docs/pricing
+// 1. take a screenshot of the pricing table
+// 2. in chatgpt, include the screenshot as image and ask :
+// ```
+// from the reference image output a typescript object of the format:
+// 
+// const pricingPerModelStandard: PricingPerModel = {
+// 	'gpt-5-mini': {
+// 		modelName: 'gpt-5-mini',
+// 		inputPer1MTokens: 0.25,
+// 		cacheInputPer1MTokens: 0.025,
+// 		outputPer1MTokens: 2.00,
+// 	},
+// }
+// ```
+exports.pricingPerModel = {
+    'gpt-5.4 (<272K context length)': {
+        modelName: 'gpt-5.4 (<272K context length)',
+        inputPer1MTokens: 2.5,
+        cacheInputPer1MTokens: 0.25,
+        outputPer1MTokens: 15.0,
+    },
+    'gpt-5.4 (>272K context length)': {
+        modelName: 'gpt-5.4 (>272K context length)',
+        inputPer1MTokens: 5.0,
+        cacheInputPer1MTokens: 0.5,
+        outputPer1MTokens: 22.5,
+    },
+    'gpt-5.4-pro (<272K context length)': {
+        modelName: 'gpt-5.4-pro (<272K context length)',
+        inputPer1MTokens: 30.0,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 180.0,
+    },
+    'gpt-5.4-pro (>272K context length)': {
+        modelName: 'gpt-5.4-pro (>272K context length)',
+        inputPer1MTokens: 60.0,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 270.0,
+    },
+    'gpt-5.2': {
+        modelName: 'gpt-5.2',
+        inputPer1MTokens: 1.75,
+        cacheInputPer1MTokens: 0.175,
+        outputPer1MTokens: 14.0,
+    },
+    'gpt-5.1': {
+        modelName: 'gpt-5.1',
+        inputPer1MTokens: 1.25,
+        cacheInputPer1MTokens: 0.125,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-5': {
+        modelName: 'gpt-5',
+        inputPer1MTokens: 1.25,
+        cacheInputPer1MTokens: 0.125,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-5-mini': {
+        modelName: 'gpt-5-mini',
+        inputPer1MTokens: 0.25,
+        cacheInputPer1MTokens: 0.025,
+        outputPer1MTokens: 2.0,
+    },
+    'gpt-5-nano': {
+        modelName: 'gpt-5-nano',
+        inputPer1MTokens: 0.05,
+        cacheInputPer1MTokens: 0.005,
+        outputPer1MTokens: 0.4,
+    },
+    'gpt-5.3-chat-latest': {
+        modelName: 'gpt-5.3-chat-latest',
+        inputPer1MTokens: 1.75,
+        cacheInputPer1MTokens: 0.175,
+        outputPer1MTokens: 14.0,
+    },
+    'gpt-5.2-chat-latest': {
+        modelName: 'gpt-5.2-chat-latest',
+        inputPer1MTokens: 1.75,
+        cacheInputPer1MTokens: 0.175,
+        outputPer1MTokens: 14.0,
+    },
+    'gpt-5.1-chat-latest': {
+        modelName: 'gpt-5.1-chat-latest',
+        inputPer1MTokens: 1.25,
+        cacheInputPer1MTokens: 0.125,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-5-chat-latest': {
+        modelName: 'gpt-5-chat-latest',
+        inputPer1MTokens: 1.25,
+        cacheInputPer1MTokens: 0.125,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-5.3-codex': {
+        modelName: 'gpt-5.3-codex',
+        inputPer1MTokens: 1.75,
+        cacheInputPer1MTokens: 0.175,
+        outputPer1MTokens: 14.0,
+    },
+    'gpt-5.2-codex': {
+        modelName: 'gpt-5.2-codex',
+        inputPer1MTokens: 1.75,
+        cacheInputPer1MTokens: 0.175,
+        outputPer1MTokens: 14.0,
+    },
+    'gpt-5.1-codex-max': {
+        modelName: 'gpt-5.1-codex-max',
+        inputPer1MTokens: 1.25,
+        cacheInputPer1MTokens: 0.125,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-5.1-codex': {
+        modelName: 'gpt-5.1-codex',
+        inputPer1MTokens: 1.25,
+        cacheInputPer1MTokens: 0.125,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-5-codex': {
+        modelName: 'gpt-5-codex',
+        inputPer1MTokens: 1.25,
+        cacheInputPer1MTokens: 0.125,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-5.2-pro': {
+        modelName: 'gpt-5.2-pro',
+        inputPer1MTokens: 21.0,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 168.0,
+    },
+    'gpt-5-pro': {
+        modelName: 'gpt-5-pro',
+        inputPer1MTokens: 15.0,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 120.0,
+    },
+    'gpt-4.1': {
+        modelName: 'gpt-4.1',
+        inputPer1MTokens: 2.0,
+        cacheInputPer1MTokens: 0.5,
+        outputPer1MTokens: 8.0,
+    },
+    'gpt-4.1-mini': {
+        modelName: 'gpt-4.1-mini',
+        inputPer1MTokens: 0.4,
+        cacheInputPer1MTokens: 0.1,
+        outputPer1MTokens: 1.6,
+    },
+    'gpt-4.1-nano': {
+        modelName: 'gpt-4.1-nano',
+        inputPer1MTokens: 0.1,
+        cacheInputPer1MTokens: 0.025,
+        outputPer1MTokens: 0.4,
+    },
+    'gpt-4o': {
+        modelName: 'gpt-4o',
+        inputPer1MTokens: 2.5,
+        cacheInputPer1MTokens: 1.25,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-4o-2024-05-13': {
+        modelName: 'gpt-4o-2024-05-13',
+        inputPer1MTokens: 5.0,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 15.0,
+    },
+    'gpt-4o-mini': {
+        modelName: 'gpt-4o-mini',
+        inputPer1MTokens: 0.15,
+        cacheInputPer1MTokens: 0.075,
+        outputPer1MTokens: 0.6,
+    },
+    'gpt-realtime': {
+        modelName: 'gpt-realtime',
+        inputPer1MTokens: 4.0,
+        cacheInputPer1MTokens: 0.4,
+        outputPer1MTokens: 16.0,
+    },
+    'gpt-realtime-1.5': {
+        modelName: 'gpt-realtime-1.5',
+        inputPer1MTokens: 4.0,
+        cacheInputPer1MTokens: 0.4,
+        outputPer1MTokens: 16.0,
+    },
+    'gpt-realtime-mini': {
+        modelName: 'gpt-realtime-mini',
+        inputPer1MTokens: 0.6,
+        cacheInputPer1MTokens: 0.06,
+        outputPer1MTokens: 2.4,
+    },
+    'gpt-4o-realtime-preview': {
+        modelName: 'gpt-4o-realtime-preview',
+        inputPer1MTokens: 5.0,
+        cacheInputPer1MTokens: 2.5,
+        outputPer1MTokens: 20.0,
+    },
+    'gpt-4o-mini-realtime-preview': {
+        modelName: 'gpt-4o-mini-realtime-preview',
+        inputPer1MTokens: 0.6,
+        cacheInputPer1MTokens: 0.3,
+        outputPer1MTokens: 2.4,
+    },
+    'gpt-audio': {
+        modelName: 'gpt-audio',
+        inputPer1MTokens: 2.5,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-audio-1.5': {
+        modelName: 'gpt-audio-1.5',
+        inputPer1MTokens: 2.5,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-audio-mini': {
+        modelName: 'gpt-audio-mini',
+        inputPer1MTokens: 0.6,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 2.4,
+    },
+    'gpt-4o-audio-preview': {
+        modelName: 'gpt-4o-audio-preview',
+        inputPer1MTokens: 2.5,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 10.0,
+    },
+    'gpt-4o-mini-audio-preview': {
+        modelName: 'gpt-4o-mini-audio-preview',
+        inputPer1MTokens: 0.15,
+        cacheInputPer1MTokens: undefined,
+        outputPer1MTokens: 0.6,
+    },
+};
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//	
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+class OpenAiCostCalculator {
+    /**
+     * - see https://developers.openai.com/api/docs/pricing
+     *
+     * # Usage
+     * ```ts
+     * const response = await openaiClient.responses.create({
+     *		model: 'gpt-5-mini',
+     *		input: 'hello',
+     * });
+     *
+     * const openaiUsage: OpenAI.Responses.ResponseUsage = response.usage!
+     * const costResponse = await OpenAiCostCalculator.calculateCost(response.model, response.usage);
+     * console.log(costResponse);
+     * ```
+     */
+    static async calculateCost(modelName, openaiUsage, priorityType = 'standard') {
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        //	handle the `272K input tokens` case for `gpt-5.4` and `gpt-5.4-pro`
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        var _a, _b;
+        // NOTE: handle the `272K input tokens` case for `gpt-5.4` and `gpt-5.4-pro`
+        // - see details at https://developers.openai.com/api/docs/pricing
+        // - Modify the modelName to include ` (>272K context length)` or `(<272K context length)` based on total input tokens and modelName
+        const modelIn272kCase = (modelName === 'gpt-5.4' || modelName === 'gpt-5.4-pro');
+        const totalInputTokens = openaiUsage.input_tokens + (((_a = openaiUsage.input_tokens_details) === null || _a === void 0 ? void 0 : _a.cached_tokens) || 0);
+        const usageIn272kCase = (totalInputTokens > 272000);
+        if (modelIn272kCase && usageIn272kCase) {
+            modelName = `${modelName} (>272K context length)`;
+        }
+        else if (modelIn272kCase && usageIn272kCase === false) {
+            modelName = `${modelName} (<272K context length)`;
+        }
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        //	Remove date suffix if needed
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        // Remove date suffix from modelName if present, to match the pricingPerModel keys
+        // - For example, if the modelName is `gpt-4o-2024-05-13`, we remove the `-2024-05-13` suffix to get `gpt-4o`, which is the key in pricingPerModel
+        const modelNameWithoutDate = modelName.replace(/-\d{4}-\d{2}-\d{2}$/, '');
+        modelName = modelNameWithoutDate;
+        // get pricing information for the model
+        const pricingForModel = exports.pricingPerModel[modelName];
+        if (pricingForModel === undefined) {
+            throw new Error(`No pricing information found for model ${modelName}`);
+        }
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        //	Handle the priorityType for cost calculation
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        // Handle the priorityType for cost calculation
+        // - see details at https://developers.openai.com/api/docs/pricing#priority-tiers
+        // - Modify the inputPer1MTokens, cacheInputPer1MTokens, and outputPer1MTokens based on priorityType
+        let priorityPricingMultiplier = 1.0;
+        if (priorityType === 'batch') {
+            priorityPricingMultiplier = 0.5;
+        }
+        else if (priorityType === 'flex') {
+            priorityPricingMultiplier = 0.5;
+        }
+        else if (priorityType === 'standard') {
+            priorityPricingMultiplier = 1.0;
+        }
+        else if (priorityType === 'priority') {
+            priorityPricingMultiplier = 2;
+        }
+        // apply the priorityPricingMultiplier to the pricingForModel
+        pricingForModel.inputPer1MTokens *= priorityPricingMultiplier;
+        if (pricingForModel.cacheInputPer1MTokens !== undefined) {
+            pricingForModel.cacheInputPer1MTokens *= priorityPricingMultiplier;
+        }
+        pricingForModel.outputPer1MTokens *= priorityPricingMultiplier;
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        //	Compute the cost for the usage
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        // NOTE: about input .cached_tokens and cost calculation
+        // - `.cached_tokens` are not included in `.input_tokens`, so both are included in the total input token count and cost calculation, 
+        // NOTE: About reasoning tokens and cost calculation
+        // - Reasoning tokens are not billed separately, but they are still output tokens, so they are included in the output token count and cost calculation.
+        // from https://developers.openai.com/api/docs/pricing
+        // "While reasoning tokens are not visible via the API, they still occupy space in the model’s context window and are billed as output tokens."
+        // Compute the input cost
+        const inputCost = (openaiUsage.input_tokens / 1000000) * pricingForModel.inputPer1MTokens;
+        // Compute the cached input cost (if applicable)
+        let cacheInputCost = 0;
+        if (pricingForModel.cacheInputPer1MTokens !== undefined && ((_b = openaiUsage.input_tokens_details) === null || _b === void 0 ? void 0 : _b.cached_tokens) !== undefined) {
+            cacheInputCost = (openaiUsage.input_tokens_details.cached_tokens / 1000000) * pricingForModel.cacheInputPer1MTokens;
+        }
+        // Compute the output cost (including reasoning tokens)
+        const outputCost = (openaiUsage.output_tokens / 1000000) * pricingForModel.outputPer1MTokens;
+        // compute total cost
+        const totalCost = inputCost + cacheInputCost + outputCost;
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        //	build the costResponse object and return it
+        ///////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        // build the costResponse object and return it
+        const costResponse = {
+            inputCost,
+            cacheInputCost,
+            outputCost,
+            totalCost,
+        };
+        return costResponse;
+    }
+}
+exports.OpenAiCostCalculator = OpenAiCostCalculator;
+//# sourceMappingURL=openai_cost_calculator.js.map
