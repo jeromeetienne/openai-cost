@@ -3,3 +3,6 @@
 
 # ignore OpenAICostSampleDbHelper
 .openai_cost_sample_db.json
+
+# ignore OpenAICostTrackerSqlite
+.openai_cost_tracker.sqlite
