@@ -49,7 +49,7 @@ async function main() {
 		// make the call
 		const response = await openaiClient.responses.create({
 			model: modelName,
-			input: `say hello`,
+			input: `count up to 20, one by line`,
 		});
 		// get usage details from the response
 		const openaiUsage: OpenAI.Responses.ResponseUsage = response.usage!
