@@ -7,7 +7,7 @@ import OpenAI from "openai";
 import OpenAICache from "openai-cache";
 import KeyvSqlite from '@keyv/sqlite';
 import { Cacheable } from "cacheable";
-import { OpenAiCostCalculator } from "../src/openai_cost_calculator";
+import { OpenAiCostCalculator, OpenAiCostResponse } from "../src/openai_cost_calculator";
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -40,10 +40,13 @@ async function main() {
 		'gpt-5.2',
 		'gpt-5-mini',
 		'gpt-5-nano',
+		'gpt-4o',
 		'gpt-4.1',
 		'gpt-4.1-mini',
-		'gpt-4.1-nano'
+		'gpt-4.1-nano',
 	]
+
+	const costResponsePerName: Record<string, OpenAiCostResponse> = {};
 
 	for (const modelName of modelNames) {
 		// make the call
@@ -56,12 +59,17 @@ async function main() {
 
 		// console.log(`openai model=${chalk.green(modelName)} usage:`, openaiUsage);
 		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiUsage);
+		costResponsePerName[modelName] = costResponse;
+
+		const firstModelName = modelNames[0];
+		const firstCostResponse = costResponsePerName[firstModelName];
 
 		// output results in a nice format - colored + vertically aligned
 		console.log([
 			`model: ${chalk.green(modelName.padEnd(12))}`,
-			`$${chalk.yellow(costResponse.totalCost.toFixed(6))} /call -`,
-			`${(1 / costResponse.totalCost).toFixed(2).padStart(10)} call/usd`
+			`$${chalk.yellow(costResponse.totalCost.toFixed(6).padStart(7))}/call -`,
+			`${(1 / costResponse.totalCost).toFixed(2).padStart(10)} call/usd`,
+			`${(firstCostResponse.totalCost / costResponse.totalCost).toFixed(2).padStart(5)}x related to ${firstModelName}`,
 		].join(" "))
 	}
 }
