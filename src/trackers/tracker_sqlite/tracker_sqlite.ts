@@ -180,6 +180,7 @@ export class OpenAiCostTrackerSqlite {
 		const usage: OpenAI.Responses.ResponseUsage | undefined = responseBody?.usage;
 
 		if (usage === undefined || modelName === undefined) {
+			debugger
 			console.warn(`Could not extract usage information from response for trackerId ${bucketId}`);
 			return;
 		}
