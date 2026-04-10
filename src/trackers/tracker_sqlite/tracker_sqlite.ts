@@ -3,7 +3,8 @@ import OpenAI from "openai";
 import OpenAICache from "openai-cache";
 import Chalk from "chalk";
 import BetterSqlite3 from "better-sqlite3";
-import { OpenAiCostCalculator, OpenAiCostResponse, OpenAICallTrackerCallback } from "openai-cost";
+import { OpenAiCostCalculator, OpenAiCostResponse } from "../../openai_cost_calculator";
+import {  OpenAICallTrackerCallback } from "../../openai_call_tracker";
 
 // local imports
 

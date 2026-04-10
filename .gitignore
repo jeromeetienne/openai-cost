@@ -1,2 +1,5 @@
+# Ignore node_modules and build output directory
 node_modules/
-tsconfig.tsbuildinfo
+
+# Build output directory
+dist/
