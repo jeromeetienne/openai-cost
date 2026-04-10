@@ -50,12 +50,13 @@ async function main() {
 		};
 		let signalReceived = false;
 		process.on('SIGINT', async () => {
+			if (signalReceived) return; // if we receive multiple signals, we want to avoid calling close multiple times
 			signalReceived = true;
-			console.log(Chalk.yellow("\nSIGINT received. Closing database..."));
-			await tracker.close();
+			console.log(Chalk.yellow("\nSIGINT received. Exiting..."));
 		});
 		while(signalReceived === false) {
 			console.clear();
+			console.log(Chalk.yellow(`Watching for cost updates... ${new Date().toLocaleString()} (press Ctrl+C to exit)`));
 			await printCostSummary();
 			await new Promise(resolve => setTimeout(resolve, 500));
 		}
