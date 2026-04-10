@@ -1,6 +1,6 @@
 {
 	"name": "openai-cost",
-	"version": "1.0.12",
+	"version": "1.0.13",
 	"description": "OpenAI token usage cost calculator and fetch-based call tracker utilities.",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
