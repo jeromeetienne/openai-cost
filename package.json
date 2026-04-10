@@ -29,7 +29,8 @@
 	"scripts": {
 		"sample:comparator": "tsx examples/openai_cost_comparator.ts",
 		"sample:basic": "tsx examples/openai_cost_example.ts",
-		"sample:tracker": "tsx examples/openai_cost_tracker_example.ts",
+		"sample:tracker_json": "tsx examples/openai_cost_tracker_json_example.ts",
+		"sample:tracker_sqlite": "tsx examples/openai_cost_tracker_sqlite_example.ts",
 		"build": "tsc -p tsconfig.build.json",
 		"publish:all": "npm run build && npm version patch && npm publish --access public",
 		"test": "echo \"Error: no test specified\" && exit 1"
