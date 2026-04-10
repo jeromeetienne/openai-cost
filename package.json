@@ -33,7 +33,7 @@
 		"build": "tsc -p tsconfig.build.json",
 		"clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
 		"prepack": "npm run clean && npm run build",
-		"publish:all": "npm run build && npm version patch && git add . && git commit -m 'version bump' && npm publish --access public",
+		"publish:all": "npm run build && npm version patch && npm publish --access public",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [
