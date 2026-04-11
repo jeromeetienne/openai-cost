@@ -78,24 +78,28 @@ async function main() {
 	const prompt = `say hello`
 	const modelName = 'gpt-4.1-nano';
 
-	console.log(`making first API call...`);
-	const response1 = await openaiClient.responses.create({
-		model: modelName,
-		input: prompt,
-	});
-
 	console.log(`making second API call (should be from cache)...`);
-	const response2 = await openaiClient.responses.create({
+	const responseStreamEvents = await openaiClient.responses.create({
 		model: modelName,
 		input: prompt,
+		stream: true,
 	});
 
-	// display cost per call
-	const openaiUsage1: OpenAI.Responses.ResponseUsage = response1.usage!
-	const costResponse1 = await OpenAiCostCalculator.calculateCost(modelName, openaiUsage1);
-	console.log(`cost per call:`, costResponse1);
+	// consume all the events from the response stream, which will trigger the cost tracking in the OpenAICallTracker
+	let responseStreamEvent: OpenAI.Responses.ResponseStreamEvent
+	for await ( responseStreamEvent of responseStreamEvents) {
+		console.log(`responseStreamEvent`,responseStreamEvent);
+	}
 
-	// // display tracked costs in the sample db
+	// Get ResponseUsage from the final response event
+	const responseCompletedEvent = responseStreamEvent! as OpenAI.Responses.ResponseCompletedEvent;
+	const openaiUsage: OpenAI.Responses.ResponseUsage = responseCompletedEvent.response.usage!
+
+	// calculate the cost of the API call using the OpenAiCostCalculator
+	const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiUsage);
+	console.log(`cost per call:`, costResponse);
+
+	// display tracked costs in the sample db
 	// console.log(`trackedSqlite records:`, await trackerSqlite.getAllRecords());
 
 	// save the tracked costs to a file

@@ -44,6 +44,8 @@ export class OpenAICallTracker {
 			const response = await originalFetch(input, init)
 
 			if (trackerCallback) {
+				// TODO should we do that?
+				// this will wait up to the end of the stream ... and then... deliver the first chunk to the caller
 				await trackerCallback(bucketId, response.clone());
 			}
 

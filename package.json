@@ -58,6 +58,6 @@
 		"better-sqlite3": "^12.8.0",
 		"commander": "^14.0.3",
 		"openai": "^6.27.0",
-		"openai-cache": "^1.0.14"
+		"openai-cache": "^1.0.29"
 	}
 }

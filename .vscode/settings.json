@@ -1,0 +1,19 @@
+{
+    // format on save
+    "editor.formatOnSave": true,
+    // disable auto-detection of indentation to ensure consistent formatting
+    "editor.detectIndentation": false,
+    // indent with tabs and set tab size to 8
+    "[typescript]": {
+        "editor.insertSpaces": false,
+        "editor.tabSize": 8
+    },
+    "[typescriptreact]": {
+        "editor.insertSpaces": false,
+        "editor.tabSize": 8
+    },
+    "[JSON]": {
+        "editor.insertSpaces": false,
+        "editor.tabSize": 8
+    },
+}
