@@ -168,7 +168,7 @@ async function main() {
 		console.log(`${Chalk.yellow('Making nostream API calls to calculate cost (tracked)')}`);
 
 		// clean the cache before starting 
-		// await openaiCache.cleanCache();
+		await openaiCache.cleanCache();
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('First call (nostream) (NOT CACHED)')} ---`)
@@ -199,7 +199,7 @@ async function main() {
 		console.log(`${Chalk.yellow('Making streamed API calls to calculate cost (non-tracked)')}`);
 
 		// clean the cache before starting 
-		// await openaiCache.cleanCache();
+		await openaiCache.cleanCache();
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('First call (streamed) (NOT CACHED)')} ---`)
