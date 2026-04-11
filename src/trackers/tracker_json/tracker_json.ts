@@ -135,7 +135,7 @@ export class OpenAICostTrackerJson {
 		// to avoid tracking costs multiple times for the same response when it is cached. 
 		// @ts-ignore - we know this header is added by the OpenAICache when markResponseEnabled is true, but it is not in 
 		// the type definition of Response, so we ignore the type error here
-		const isFromCache = responseBody[OpenAICache.MarkResponseName] === true;
+		const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
 
 		// get the correct bucket in the db to update based on whether the response was from cache or not
 		const bucketDb = isFromCache ? this._sampleStorage.saved : this._sampleStorage.spent;

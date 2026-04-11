@@ -33,6 +33,8 @@
         "sample:tracker_sqlite": "tsx examples/openai_cost_tracker_sqlite_example.ts",
         "openai_cost:watch": "tsx ./src/trackers/tracker_sqlite/bin/tracker_sqlite_pp.ts -i ./examples/.openai_cost_tracker.sqlite -w",
         "openai_cache:clean": "rm -f ./examples/.openai_cache.sqlite",
+        "tracker_sqlite:clean": "rm -f ./examples/.openai_cost_tracker.sqlite",
+        "tracker_json:clean": "rm -f ./examples/.openai_cost_tracker_json.json",
         "build": "tsc -p tsconfig.build.json",
         "publish:all": "npm run build && npm version patch && npm publish --access public",
         "test": "echo \"Error: no test specified\" && exit 1"

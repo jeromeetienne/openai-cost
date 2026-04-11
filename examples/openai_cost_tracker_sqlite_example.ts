@@ -215,7 +215,7 @@ async function main() {
 		const speedupFactor = call1Elapsed / call2Elapsed;
 		console.log(`speedup factor (due to cache): ${speedupFactor > 10 ? Chalk.green(speedupFactor.toFixed(2)) : Chalk.red(speedupFactor.toFixed(2))}x`);
 		const costDifference = call1CostResponse.totalCost - call2CostResponse.totalCost;
-		console.log(`cost difference (between calls): $${costDifference.toFixed(6)}`);
+		console.log(`cost difference (cost untracked): $${costDifference.toFixed(6)}`);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
