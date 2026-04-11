@@ -180,12 +180,12 @@ export class OpenAiCostTrackerSqlite {
 		if (contentType !== null) {
 			// handle if content-type is text/event-stream (for streamed responses)
 			if (contentType.includes("text/event-stream")) {
-				await this._trackerCallbackEventStream(bucketId, response);
+				await this._trackerCallback_EventStream(bucketId, response);
 				return
 			}
 			// handle if content-type is application/json (for non-streamed responses)
 			if (contentType.includes("application/json")) {
-				await this._trackerCallbackAppJson(bucketId, response);
+				await this._trackerCallback_ApplicationJson(bucketId, response);
 				return
 			}
 		}
@@ -199,7 +199,7 @@ export class OpenAiCostTrackerSqlite {
 	 * @param bucketId - identifier for grouping costs
 	 * @param response - OpenAI API response
 	 */
-	private async _trackerCallbackEventStream(bucketId: string, response: Response): Promise<void> {
+	private async _trackerCallback_EventStream(bucketId: string, response: Response): Promise<void> {
 		// sanity check - ensure content type is text/event-stream, otherwise we may not be able to parse the response correctly
 		const contentType = response.headers.get("Content-Type")
 		if (contentType === null || contentType.includes("text/event-stream") !== true) {
@@ -216,23 +216,23 @@ export class OpenAiCostTrackerSqlite {
 
 		// Buffer to accumulate partial streaming data
 		let receivedBuffer: string = "";
-		
+
 		// Loop through the stream until all data is received
 		while (true) {
 			// Read the next chunk from the stream
 			const { done, value } = await streamReader.read();
-			
+
 			// Exit loop when stream is exhausted
 			if (done) break;
 
 			// Decode the binary chunk to text and append to buffer
 			receivedBuffer += textDecoder.decode(value, {
-				stream: true 
+				stream: true
 			});
 
 			// Split buffer by double newlines (SSE event separator)
 			const eventContents = receivedBuffer.split("\n\n");
-			
+
 			// Keep the last incomplete event in buffer for next iteration
 			receivedBuffer = eventContents.pop() || "";
 
@@ -244,13 +244,13 @@ export class OpenAiCostTrackerSqlite {
 				// and contains the usage information in the data field
 				const isResponseCompletedEvent = eventLines.some(eventLine => eventLine.trim() === `event: ${eventNameReponseCompleted}`);
 				// if not, continue to the next event
-				if(isResponseCompletedEvent === false) continue;
+				if (isResponseCompletedEvent === false) continue;
 
 				// try to find the data line in the event content, which contains the usage information in JSON format, and 
 				// extract the usage information from it
 				const dataLine = eventLines.find(line => line.startsWith("data: "));
 				// if no data line found, throw an error
-				if( dataLine === undefined) {
+				if (dataLine === undefined) {
 					throw new Error(`Could not find data line in "${eventNameReponseCompleted}" event for bucketId ${bucketId}`);
 				}
 
@@ -275,10 +275,6 @@ export class OpenAiCostTrackerSqlite {
 				}
 
 				// Check if response is from cache
-				// const isFromCache = responseBody[OpenAICache.MARK_RESPONSE_NAME] === true;
-				// TODO maybe 
-				// const isFromCache = false
-				// const isFromCache = responseBodyJson[OpenAICache.MARK_RESPONSE_NAME] === true;
 				const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
 
 				// process the usage information (calculate cost and store in SQLite)
@@ -293,7 +289,7 @@ export class OpenAiCostTrackerSqlite {
 	 * @param bucketId - identifier for grouping costs
 	 * @param response - OpenAI API response
 	 */
-	private async _trackerCallbackAppJson(bucketId: string, response: Response): Promise<void> {
+	private async _trackerCallback_ApplicationJson(bucketId: string, response: Response): Promise<void> {
 		// sanity check - ensure content type is application/json, otherwise we may not be able to parse the response correctly
 		const contentType = response.headers.get("Content-Type")
 		if (contentType === null || contentType.includes("application/json") !== true) {
@@ -315,32 +311,11 @@ export class OpenAiCostTrackerSqlite {
 		// const isFromCache = responseBodyJson[OpenAICache.MARK_RESPONSE_NAME] === true;
 		const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
 
+		console.log(`isFromCache: ${isFromCache}`);
+		// console.log(`openai-cost headers`, Array.from(response.headers.entries()));
+
 		// process the usage information (calculate cost and store in SQLite)
 		await this._trackerCallbackPostProcess(bucketId, usage, modelName, isFromCache);
-
-		// // Calculate cost
-		// let costResponse: OpenAiCostResponse;
-		// try {
-		// 	costResponse = await OpenAiCostCalculator.calculateCost(modelName, usage);
-		// } catch (error) {
-		// 	console.error(`Error calculating cost for trackerId ${bucketId}:`, error);
-		// 	return;
-		// }
-
-		// // Check if response is from cache
-		// // @ts-ignore - header added by OpenAICache but not in type definition
-		// const isFromCache = responseBody[OpenAICache.MARK_RESPONSE_NAME] === true;
-
-		// // Get current timestamp in full ISO 8601 format
-		// const dateIso = new Date().toISOString();
-		// const costAmount = costResponse.totalCost;
-
-		// // Append new record to database
-		// const insertStmt = this._database.prepare(
-		// 	"INSERT INTO cost_tracking (dateIso, bucketId, modelName, costSpent, costSaved) VALUES (?, ?, ?, ?, ?)"
-		// );
-		// const [spent, saved] = isFromCache ? [0, costAmount] : [costAmount, 0];
-		// insertStmt.run(dateIso, bucketId, modelName, spent, saved);
 	}
 
 	/**
@@ -349,9 +324,9 @@ export class OpenAiCostTrackerSqlite {
 	 * @param response - OpenAI API response
 	 */
 	private async _trackerCallbackPostProcess(
-		bucketId: string, 
-		usage: OpenAI.Responses.ResponseUsage, 
-		modelName: string, 
+		bucketId: string,
+		usage: OpenAI.Responses.ResponseUsage,
+		modelName: string,
 		isFromCache: boolean
 	): Promise<void> {
 		// Calculate cost

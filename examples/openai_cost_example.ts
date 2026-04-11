@@ -33,7 +33,7 @@ async function main() {
 
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
-	//	
+	//	function doCallNoStream() - makes a non-streamed API call
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
 
@@ -41,10 +41,10 @@ async function main() {
 		const prompt = `say hello`
 		const modelName = 'gpt-4.1-nano';
 
+		// measure call start time
 		const callStart = Date.now();
 
-
-		// Make a streamed API call - with no streaming, to get the response usage and calculate the cost of the API call using the OpenAiCostCalculator
+		// Make a nostream API call - with no streaming, to get the response usage and calculate the cost of the API call using the OpenAiCostCalculator
 		const response = await openaiClient.responses.create({
 			model: modelName,
 			input: prompt,
@@ -60,15 +60,17 @@ async function main() {
 		// display the cost of the API call
 		console.log(`cost for this response: $${costResponse.totalCost.toFixed(6)} - ${(1 / costResponse.totalCost).toFixed(2)} call/usd`);
 
+		// measure call elapsed time
 		const callElapsed = Date.now() - callStart;
 		console.log(`duration: ${Chalk.cyan(callElapsed)} ms`);
 
+		// return the usage, cost response and elapsed time for this call
 		return { openaiUsage, costResponse, callElapsed }
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
-	//	
+	//	function doCallStreamed() - makes a streamed API call
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
 
@@ -76,9 +78,11 @@ async function main() {
 		const prompt = `say hello`
 		const modelName = 'gpt-4.1-nano';
 
+		// measure call start time
 		const callStart = Date.now();
 
-		const responseStreamEvents1 = await openaiClient.responses.create({
+		// Make a streamed API call - with streaming, to get the response usage and calculate the cost of the API call using the OpenAiCostCalculator
+		const responseStreamEvents = await openaiClient.responses.create({
 			model: modelName,
 			input: prompt,
 			stream: true,
@@ -89,28 +93,29 @@ async function main() {
 		// so we will consume the stream events until we get to the final event, and then get the usage from there
 
 		// consume all the events from the response stream, which will trigger the cost tracking in the OpenAICallTracker
-		let responseStreamEvent1: OpenAI.Responses.ResponseStreamEvent
-		for await (responseStreamEvent1 of responseStreamEvents1) {
-			// console.log(`- streamed event type: ${responseStreamEvent1.type} - ${JSON.stringify(responseStreamEvent1)}`);
+		let responseStreamEvent: OpenAI.Responses.ResponseStreamEvent
+		for await (responseStreamEvent of responseStreamEvents) {
+			// console.log(`- streamed event type: ${responseStreamEvent.type} - ${JSON.stringify(responseStreamEvent)}`);
 			process.stdout.write(`.`);
 		}
 		process.stdout.write(`\n`);
 
 		// Get ResponseUsage from the final response event
-		const responseCompletedEvent = responseStreamEvent1! as OpenAI.Responses.ResponseCompletedEvent;
+		const responseCompletedEvent = responseStreamEvent! as OpenAI.Responses.ResponseCompletedEvent;
 		const openaiUsage: OpenAI.Responses.ResponseUsage = responseCompletedEvent.response.usage!
 
 		// calculate the cost of the API call using the OpenAiCostCalculator
 		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiUsage);
+		// measure call elapsed time
+		const callElapsed = Date.now() - callStart;
+
+		// display info about the call
 		console.log(`openai usage:`, JSON.stringify(openaiUsage));
 		console.log(`cost response:`, JSON.stringify(costResponse));
-
-		// display the cost of the API call
 		console.log(`cost for this response: $${costResponse.totalCost.toFixed(6)} - ${(1 / costResponse.totalCost).toFixed(2)} call/usd`);
-
-		const callElapsed = Date.now() - callStart;
 		console.log(`duration: ${Chalk.cyan(callElapsed)} ms`);
 
+		// return the usage, cost response and elapsed time for this call
 		return { openaiUsage, costResponse, callElapsed }
 	}
 
@@ -123,17 +128,17 @@ async function main() {
 	if (true) {
 		console.log()
 		console.log(Chalk.yellow(`==================================`));
-		console.log(`${Chalk.yellow('Making non-streamed API calls to calculate cost with OpenAiCostCalculator')}`);
+		console.log(`${Chalk.yellow('Making non-streamed API calls to calculate cost (non-tracked)')}`);
 
 		// clean the cache before starting 
 		await openaiCache.cleanCache();
 
 		console.log()
-		console.log(`--- ${Chalk.magenta('First call (nostream) (should not be in the cache)')} ---`)
+		console.log(`--- ${Chalk.magenta('First call (nostream) (NOT from cache)')} ---`)
 		const { openaiUsage: call1OpenaiUsage, costResponse: call1CostResponse, callElapsed: call1Elapsed } = await doCallNoStream();
 
 		console.log()
-		console.log(`--- ${Chalk.magenta('Second call (nostream) (should be from the cache)')} ---`)
+		console.log(`--- ${Chalk.magenta('Second call (nostream) (IS from cache)')} ---`)
 		const { openaiUsage: call2OpenaiUsage, costResponse: call2CostResponse, callElapsed: call2Elapsed } = await doCallNoStream();
 
 		console.log()
@@ -152,17 +157,17 @@ async function main() {
 	if (true) {
 		console.log()
 		console.log(Chalk.yellow(`==================================`));
-		console.log(`${Chalk.yellow('Making streamed API calls to calculate cost with OpenAiCostCalculator')}`);
+		console.log(`${Chalk.yellow('Making streamed API calls to calculate cost (non-tracked)')}`);
 
 		// clean the cache before starting 
 		await openaiCache.cleanCache();
 
 		console.log()
-		console.log(`--- ${Chalk.magenta('First call (streamed) (should not be in the cache)')} ---`)
+		console.log(`--- ${Chalk.magenta('First call (streamed) (NOT from cache)')} ---`)
 		const { openaiUsage: call1OpenaiUsage, costResponse: call1CostResponse, callElapsed: call1Elapsed } = await doCallStreamed();
 
 		console.log()
-		console.log(`--- ${Chalk.magenta('Second call (streamed) (should be from the cache)')} ---`)
+		console.log(`--- ${Chalk.magenta('Second call (streamed) (IS from cache)')} ---`)
 		const { openaiUsage: call2OpenaiUsage, costResponse: call2CostResponse, callElapsed: call2Elapsed } = await doCallStreamed();
 
 		console.log()

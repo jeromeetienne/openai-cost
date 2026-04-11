@@ -1,63 +1,64 @@
 {
-	"name": "openai-cost",
-	"version": "1.0.15",
-	"description": "OpenAI token usage cost calculator and fetch-based call tracker utilities.",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"require": "./dist/index.js",
-			"default": "./dist/index.js"
-		}
-	},
-	"files": [
-		"dist",
-		"README.md"
-	],
-	"engines": {
-		"node": ">=18"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/jeromeetienne/openai-cost.git"
-	},
-	"bugs": {
-		"url": "https://github.com/jeromeetienne/openai-cost/issues"
-	},
-	"homepage": "https://github.com/jeromeetienne/openai-cost#readme",
-	"scripts": {
-		"sample:comparator": "tsx examples/openai_cost_comparator.ts",
-		"sample:basic": "tsx examples/openai_cost_example.ts",
-		"sample:tracker_json": "tsx examples/openai_cost_tracker_json_example.ts",
-		"sample:tracker_sqlite": "tsx examples/openai_cost_tracker_sqlite_example.ts",
-		"watch:cost": "tsx ./src/trackers/tracker_sqlite/bin/tracker_sqlite_pp.ts -i ./examples/.openai_cost_tracker.sqlite -w",
-		"build": "tsc -p tsconfig.build.json",
-		"publish:all": "npm run build && npm version patch && npm publish --access public",
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"keywords": [
-		"openai",
-		"cost",
-		"token-usage",
-		"tracker"
-	],
-	"author": "",
-	"license": "MIT",
-	"type": "commonjs",
-	"sideEffects": false,
-	"devDependencies": {
-		"@keyv/sqlite": "^4.0.8",
-		"@types/better-sqlite3": "^7.6.13",
-		"@types/node": "^25.4.0",
-		"chalk": "^5.6.2",
-		"tsx": "^4.21.0",
-		"typescript": "^6.0.2"
-	},
-	"dependencies": {
-		"better-sqlite3": "^12.8.0",
-		"commander": "^14.0.3",
-		"openai": "^6.27.0",
-		"openai-cache": "^1.0.29"
-	}
+    "name": "openai-cost",
+    "version": "1.0.15",
+    "description": "OpenAI token usage cost calculator and fetch-based call tracker utilities.",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "require": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "engines": {
+        "node": ">=18"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jeromeetienne/openai-cost.git"
+    },
+    "bugs": {
+        "url": "https://github.com/jeromeetienne/openai-cost/issues"
+    },
+    "homepage": "https://github.com/jeromeetienne/openai-cost#readme",
+    "scripts": {
+        "sample:comparator": "tsx examples/openai_cost_comparator.ts",
+        "sample:basic": "tsx examples/openai_cost_example.ts",
+        "sample:tracker_json": "tsx examples/openai_cost_tracker_json_example.ts",
+        "sample:tracker_sqlite": "tsx examples/openai_cost_tracker_sqlite_example.ts",
+        "openai_cost:watch": "tsx ./src/trackers/tracker_sqlite/bin/tracker_sqlite_pp.ts -i ./examples/.openai_cost_tracker.sqlite -w",
+        "openai_cache:clean": "rm -f ./examples/.openai_cache.sqlite",
+        "build": "tsc -p tsconfig.build.json",
+        "publish:all": "npm run build && npm version patch && npm publish --access public",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "openai",
+        "cost",
+        "token-usage",
+        "tracker"
+    ],
+    "author": "",
+    "license": "MIT",
+    "type": "commonjs",
+    "sideEffects": false,
+    "devDependencies": {
+        "@keyv/sqlite": "^4.0.8",
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/node": "^25.4.0",
+        "chalk": "^5.6.2",
+        "tsx": "^4.21.0",
+        "typescript": "^6.0.2"
+    },
+    "dependencies": {
+        "better-sqlite3": "^12.8.0",
+        "cacheable": "^2.3.4",
+        "commander": "^14.0.3",
+        "openai": "^6.27.0"
+    }
 }

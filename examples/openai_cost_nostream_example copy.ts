@@ -76,7 +76,7 @@ async function main() {
 	///////////////////////////////////////////////////////////////////////////////
 
 	console.log('----------------------------------')
-	console.log(`making first API call (should not be in the cache)...`);
+	console.log(`making first API call (NOT from cache)...`);
 	const { openaiUsage: call1OpenaiUsage, costResponse: call1CostResponse, callElapsed: call1Elapsed } = await doCallNoStream();
 
 	console.log('----------------------------------')

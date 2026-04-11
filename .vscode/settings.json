@@ -16,4 +16,12 @@
         "editor.insertSpaces": false,
         "editor.tabSize": 8
     },
+    // Disable auto focus on debug views
+    "debug.openDebug": "neverOpen",
+    "debug.focusWindowOnBreak": false,
+    // Prevent opening the source file on break
+    "debug.openExplorerOnEnd": false,
+    "debug.internalConsoleOptions": "neverOpen",
+    // Critical: Disable “reveal on break”
+    "debug.revealBreakpoint": false,
 }
