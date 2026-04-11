@@ -1,5 +1,6 @@
 // Node imports
 import Fs from "node:fs";
+import { EventEmitter } from "events";
 
 // NPM imports
 import OpenAI from "openai";
@@ -25,6 +26,14 @@ export type OpenAICostTrackerJsonStorage = {
 	saved: Record<string, OpenAICostTrackerJsonEntry>;
 }
 
+export type OpenAICostTrackerJsonBucketWrittenPayload = {
+	dateIso: string;
+	bucketId: string;
+	modelName: string;
+	costSpent: number;
+	costSaved: number;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 //	
@@ -36,7 +45,11 @@ export type OpenAICostTrackerJsonStorage = {
  * example, but it can be adapted to be used in other contexts as well. It provides a simple interface to get a tracker callback function 
  * that can be passed to the OpenAICallTracker, and it handles the storage of tracked costs in memory and optionally saving/loading them from a file.
  */
-export class OpenAICostTrackerJson {
+export class OpenAICostTrackerJson extends EventEmitter {
+	static EVENT = {
+		BUCKET_WRITTEN: "bucket_written"
+	}
+
 	private _sampleStorage: OpenAICostTrackerJsonStorage = {
 		spent: {},
 		saved: {},
@@ -45,11 +58,12 @@ export class OpenAICostTrackerJson {
 
 	/**
 	 * Constructor for the OpenAICostTrackerJson class.
-	 * @param filePath - Optional file path to load/save the tracked costs. If provided, the tracked costs will be loaded from this file 
-	 * on initialization and saved to this file on exit. If not provided, the tracked costs will only be stored in memory and will 
+	 * @param filePath - Optional file path to load/save the tracked costs. If provided, the tracked costs will be loaded from this file
+	 * on initialization and saved to this file on exit. If not provided, the tracked costs will only be stored in memory and will
 	 * not persist across sessions.
 	 */
 	constructor(filePath?: string) {
+		super()
 		this._filePath = filePath
 	}
 	/**
@@ -136,6 +150,20 @@ export class OpenAICostTrackerJson {
 		// @ts-ignore - we know this header is added by the OpenAICache when markResponseEnabled is true, but it is not in 
 		// the type definition of Response, so we ignore the type error here
 		const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
+
+		// build the event payload and emit it so consumers can react to cost updates
+		const dateIso = new Date().toISOString();
+		const costAmount = costResponse.totalCost;
+		const [costSpent, costSaved] = isFromCache ? [0, costAmount] : [costAmount, 0];
+
+		const eventPayload: OpenAICostTrackerJsonBucketWrittenPayload = {
+			dateIso,
+			bucketId,
+			modelName,
+			costSpent,
+			costSaved
+		}
+		this.emit(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, eventPayload);
 
 		// get the correct bucket in the db to update based on whether the response was from cache or not
 		const bucketDb = isFromCache ? this._sampleStorage.saved : this._sampleStorage.spent;

@@ -1,8 +1,13 @@
+// node imports
+import { EventEmitter } from "events";
+
 // npm imports
 import OpenAI from "openai";
 import OpenAICache from "openai-cache";
 import Chalk from "chalk";
 import BetterSqlite3 from "better-sqlite3";
+
+// local imports
 import { OpenAiCostCalculator, OpenAiCostResponse } from "../../openai_cost_calculator";
 import { OpenAICallTrackerCallback } from "../../openai_call_tracker";
 
@@ -53,11 +58,18 @@ export type OpenAiCostTrackerSqliteCostSummary = {
  * SQLite-backed cost tracker for OpenAI API calls.
  * Stores costs in a SQLite database with schema: dateIso, bucketId, modelName, costSpent, costSaved
  */
-export class OpenAiCostTrackerSqlite {
+export class OpenAiCostTrackerSqlite extends EventEmitter {
+	static EVENT = {
+		BUCKET_WRITTEN: "bucket_written"
+	}
+
 	private _database: BetterSqlite3.Database;
 	private _dbPath: string;
 
 	constructor(dbPath: string) {
+		// call super constructor to initialize EventEmitter
+		super()
+		// store dbPath and initialize database connection
 		this._dbPath = dbPath;
 		// Initialize database synchronously
 		this._database = new BetterSqlite3(dbPath);
@@ -341,13 +353,23 @@ export class OpenAiCostTrackerSqlite {
 		// Get current timestamp in full ISO 8601 format
 		const dateIso = new Date().toISOString();
 		const costAmount = costResponse.totalCost;
+		const [costSpent, costSaved] = isFromCache ? [0, costAmount] : [costAmount, 0];
+
+		// Emit an event with the cost information for this bucketId, so that other parts of the application can react to it if needed
+		const eventPayload: OpenAiCostTrackerSqliteEntry = {
+			dateIso,
+			bucketId,
+			modelName,
+			costSpent,
+			costSaved
+		}
+		this.emit(OpenAiCostTrackerSqlite.EVENT.BUCKET_WRITTEN, eventPayload);
 
 		// Append new record to database
 		const insertStmt = this._database.prepare(
 			"INSERT INTO cost_tracking (dateIso, bucketId, modelName, costSpent, costSaved) VALUES (?, ?, ?, ?, ?)"
 		);
-		const [spent, saved] = isFromCache ? [0, costAmount] : [costAmount, 0];
-		insertStmt.run(dateIso, bucketId, modelName, spent, saved);
+		insertStmt.run(dateIso, bucketId, modelName, costSpent, costSaved);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////

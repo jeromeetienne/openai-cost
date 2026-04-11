@@ -1,5 +1,6 @@
 // node imports
 import Path from "node:path";
+import Assert from "node:assert";
 
 // npm imports
 import OpenAI from "openai";
@@ -11,7 +12,7 @@ import Chalk from "chalk";
 // local imports
 import { OpenAiCostCalculator } from "../src/openai_cost_calculator";
 import { OpenAICallTracker } from "../src/openai_call_tracker";
-import { OpenAICostTrackerJson } from "../src/trackers/tracker_json/tracker_json";
+import { OpenAICostTrackerJson, OpenAICostTrackerJsonBucketWrittenPayload } from "../src/trackers/tracker_json/tracker_json";
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -158,6 +159,27 @@ async function main() {
 
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
+	//
+	///////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////
+
+	function onBucketWrittenExpectCostSpent(eventPayload: OpenAICostTrackerJsonBucketWrittenPayload) {
+		console.log(Chalk.blue(`[Event - ${OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN}]`), eventPayload);
+
+		// sanity check - cost MUST be spent (and not saved) when the cost is not from cache, otherwise there is a bug in the tracking logic
+		Assert.ok(eventPayload.costSpent > 0, `Expected costSpent to be > 0 for bucket written event, got ${eventPayload.costSpent}`);
+		Assert.ok(eventPayload.costSaved === 0, `Expected costSaved to be 0 for bucket written event when cost is not from cache, got ${eventPayload.costSaved}`);
+	}
+	function onBucketWrittenExpectCostSaved(eventPayload: OpenAICostTrackerJsonBucketWrittenPayload) {
+		console.log(Chalk.blue(`[Event - ${OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN}]`), eventPayload);
+
+		// sanity check - cost MUST be saved (and not spent) when the cost is from cache, otherwise there is a bug in the tracking logic
+		Assert.ok(eventPayload.costSaved > 0, `Expected costSaved to be > 0 for bucket written event, got ${eventPayload.costSaved}`);
+		Assert.ok(eventPayload.costSpent === 0, `Expected costSpent to be 0 for bucket written event when cost is from cache, got ${eventPayload.costSpent}`);
+	}
+
+	///////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////
 	//	do calls nostream
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
@@ -172,11 +194,15 @@ async function main() {
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('First call (nostream) (NOT CACHED)')} ---`)
+		trackerJson.addListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSpent);
 		const { openaiUsage: call1OpenaiUsage, costResponse: call1CostResponse, callElapsed: call1Elapsed } = await doCallNoStream();
+		trackerJson.removeListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSpent);
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('Second call (nostream) (IN CACHE)')} ---`)
+		trackerJson.addListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSaved);
 		const { openaiUsage: call2OpenaiUsage, costResponse: call2CostResponse, callElapsed: call2Elapsed } = await doCallNoStream();
+		trackerJson.removeListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSaved);
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('Result (nostream)')} ---`);
@@ -205,11 +231,15 @@ async function main() {
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('First call (streamed) (NOT CACHED)')} ---`)
+		trackerJson.addListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSpent);
 		const { openaiUsage: call1OpenaiUsage, costResponse: call1CostResponse, callElapsed: call1Elapsed } = await doCallStreamed();
+		trackerJson.removeListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSpent);
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('Second call (streamed) (IN CACHE)')} ---`)
+		trackerJson.addListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSaved);
 		const { openaiUsage: call2OpenaiUsage, costResponse: call2CostResponse, callElapsed: call2Elapsed } = await doCallStreamed();
+		trackerJson.removeListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSaved);
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('Result (streamed)')} ---`);
