@@ -10,7 +10,6 @@ import { Cacheable } from "cacheable";
 import Chalk from "chalk";
 
 // local imports
-import { OpenAiCostCalculator } from "../src/openai_cost_calculator";
 import { OpenAICallTracker } from "../src/openai_call_tracker";
 import { OpenAiCostTrackerSqlite, OpenAiCostTrackerSqliteEntry } from "../src/trackers/tracker_sqlite/tracker_sqlite";
 import { ExampleHelper } from "./libs/example_helper";
@@ -26,10 +25,10 @@ async function main() {
 	// init a cacheable instance
 	// - here it is backed by a sqlite database, but you can use any Keyv storage backend (redis, filesystem, etc)
 	const sqlitePath = `sqlite://${Path.resolve(__dirname, `./.openai_cache.sqlite`)}`;
-	const sqliteCache = new Cacheable({ secondary: new KeyvSqlite(sqlitePath) });
+	const sqliteCacheable = new Cacheable({ secondary: new KeyvSqlite(sqlitePath) });
 
 	// init the OpenAICache with the cacheable instance
-	const openaiCache = new OpenAICache(sqliteCache, {
+	const openaiCache = new OpenAICache(sqliteCacheable, {
 		markResponseEnabled: true, // this will add a custom header to the response to indicate if it was from the cache or not
 	});
 
