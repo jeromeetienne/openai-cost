@@ -50,6 +50,8 @@ export class OpenAICallTracker {
 
 			if (trackerCallback) {
 				// IMPORTANT: Do NOT await this call. Here is why:
+				//
+				// Why no await:
 				// - response.clone() tees the stream, creating two independent readers: the original and the clone.
 				// - The callback receives the clone and reads it fully to extract usage data (e.g. the "response.completed" SSE event).
 				// - If we awaited, the callback would consume the entire cloned stream before we return the original response
@@ -57,6 +59,15 @@ export class OpenAICallTracker {
 				//   effectively defeating streaming (all chunks arrive at once instead of incrementally).
 				// - Without await, the original response is returned immediately to the caller, who can iterate chunks in real-time.
 				//   Meanwhile, the callback reads the cloned stream in the background independently.
+				//
+				// Why concurrent callbacks are safe:
+				// - Node.js is single-threaded. Even with multiple unawaited callbacks in flight, JavaScript never executes
+				//   two statements at the exact same time. Concurrency is cooperative — code runs until it hits an await,
+				//   then another pending task gets a turn.
+				// - The SQLite write (better-sqlite3's insertStmt.run()) is synchronous — it executes atomically in a single
+				//   tick of the event loop. No other code can interleave between prepare and run.
+				// - Each callback works with its own response clone and local variables. The only shared resource is the
+				//   database connection, and synchronous single-statement INSERTs cannot corrupt each other.
 				trackerCallback(bucketId, input, init, response.clone());
 			}
 
