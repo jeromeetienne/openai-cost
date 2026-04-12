@@ -334,11 +334,11 @@ export class OpenAiCostCalculator {
 	 * });
 	 *
 	 * const openaiUsage: OpenAI.Responses.ResponseUsage = response.usage!
-	 * const costResponse = await OpenAiCostCalculator.calculateCost(response.model, response.usage);
+	 * const costResponse = await OpenAiCostCalculator.calculateLlmCost(response.model, response.usage);
 	 * console.log(costResponse);
 	 * ```
 	 */
-	static async calculateCost(
+	static async calculateLlmCost(
 		modelName: string,
 		openaiUsage: OpenAI.Responses.ResponseUsage,
 		priorityType: PriorityType = 'standard'

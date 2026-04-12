@@ -8,8 +8,8 @@ import { OpenAI } from 'openai';
 import OpenAICache from 'openai-cache';
 
 // local imports
-import { OpenAICallTracker } from "../src/openai_call_tracker";
-import { OpenAiCostTrackerSqlite, OpenAiCostTrackerSqliteEntry } from "../src/trackers/tracker_sqlite/tracker_sqlite";
+import { OpenAiCostTracker } from '../src/openai_cost_tracker';
+import { OpenAiCostTrackerSqlite } from "../src/trackers/tracker_sqlite/tracker_sqlite";
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
@@ -41,8 +41,8 @@ async function main() {
 	process.on('SIGTERM', onExit);
 
 	// Build the fetch function with tracking capabilities, using the OpenAICache fetch as the original fetch implementation
-	const fetchWithTracking = await OpenAICallTracker.getFetchFn(await trackerSqlite.getTrackerCallback(), {
-		bucketId: `bucket-openai-cost-tracker-sqlite-example`,
+	const fetchWithTracking = await OpenAiCostTracker.getFetchFn(await trackerSqlite.getTrackerCallback(), {
+		bucketId: `bucket-openai-streaming-debug`,
 		originalFetch: openaiCache.getFetchFn(),
 	});
 
@@ -58,20 +58,38 @@ async function main() {
 		fetch: fetchWithTracking
 	});
 
-	const stream = await openaiClient.chat.completions.create({
-		model: "gpt-4o",
-		messages: [
-			{
-				role: "user",
-				content: "explain quantum theory in simple terms"
-			},
-		],
-		stream: true,
-	});
+	if (true) {
+		// Streaming using the responses API, which is the recommended way to do streaming calls with the new OpenAI client. 
+		// This allows us to track usage and costs in real - time as the stream progresses.
+		const stream = await openaiClient.responses.create({
+			model: "gpt-4.1",
+			input: "explain quantum theory in simple terms",
+			stream: true,
+		});
+		for await (const event of stream) {
+			if (event.type === "response.output_text.delta") {
+				process.stdout.write(event.delta);
+			}
+		}
+	}
 
-	for await (const chunk of stream) {
-		const token = chunk.choices[0]?.delta?.content;
-		if (token) process.stdout.write(token);
+	if (false) {
+		// Streaming using the chat.completions API, which also works but is not the recommended way to do streaming calls with the new OpenAI client.
+		const stream = await openaiClient.chat.completions.create({
+			model: "gpt-4o",
+			messages: [
+				{
+					role: "user",
+					content: "explain quantum theory in simple terms"
+				},
+			],
+			stream: true,
+		});
+
+		for await (const chunk of stream) {
+			const token = chunk.choices[0]?.delta?.content;
+			if (token) process.stdout.write(token);
+		}
 	}
 }
 

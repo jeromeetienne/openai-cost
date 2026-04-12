@@ -10,7 +10,7 @@ import { Cacheable } from "cacheable";
 import Chalk from "chalk";
 
 // local imports
-import { OpenAICallTracker } from "../src/openai_call_tracker";
+import { OpenAICostTracker } from "../src/openai_cost_tracker";
 import { OpenAiCostTrackerSqlite, OpenAiCostTrackerSqliteEntry } from "../src/trackers/tracker_sqlite/tracker_sqlite";
 import { ExampleHelper } from "./libs/example_helper";
 
@@ -51,7 +51,7 @@ async function main() {
 	process.on('SIGTERM', onExit);
 
 	// Build the fetch function with tracking capabilities, using the OpenAICache fetch as the original fetch implementation
-	const fetchWithTracking = await OpenAICallTracker.getFetchFn(await trackerSqlite.getTrackerCallback(), {
+	const fetchWithTracking = await OpenAICostTracker.getFetchFn(await trackerSqlite.getTrackerCallback(), {
 		bucketId: `bucket-openai-cost-tracker-sqlite-example`,
 		originalFetch: openaiCache.getFetchFn(),
 	});

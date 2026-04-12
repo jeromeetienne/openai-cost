@@ -10,7 +10,7 @@ import { Cacheable } from "cacheable";
 
 // local imports
 import { OpenAiCostCalculator } from "../src/openai_cost_calculator";
-import { OpenAICallTracker } from "../src/openai_call_tracker";
+import { OpenAiCostTracker } from "../src/openai_cost_tracker";
 import { OpenAiCostTrackerSqlite, OpenAiCostTrackerSqliteEntry } from "../src/trackers/tracker_sqlite/tracker_sqlite";
 import { createTempSqlitePath, cleanupFiles, waitForEvent } from "./helpers/test_helper";
 
@@ -46,7 +46,7 @@ before(async () => {
 	await trackerSqlite.init();
 
 	// build fetch with tracking
-	const fetchWithTracking = await OpenAICallTracker.getFetchFn(
+	const fetchWithTracking = await OpenAiCostTracker.getFetchFn(
 		await trackerSqlite.getTrackerCallback(),
 		{
 			bucketId: BUCKET_ID,

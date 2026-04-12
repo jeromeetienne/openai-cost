@@ -1,5 +1,5 @@
-export { OpenAICallTracker } from "./openai_call_tracker";
-export type { OpenAICallTrackerCallback } from "./openai_call_tracker";
+export { OpenAICostTracker as OpenAICallTracker } from "./openai_cost_tracker";
+export type { OpenAICallTrackerCallback } from "./openai_cost_tracker";
 
 export { OpenAiCostCalculator, pricingPerModelLlm as pricingPerModel } from "./openai_cost_calculator";
 export type {

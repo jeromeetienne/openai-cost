@@ -6,10 +6,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // get type for fetch() function and its parameters/return type
-type OpenAICallTrackerFetchFn = typeof globalThis.fetch;
-type OpenAICallTrackerFetchInput = string | URL | Request;
-type OpenAICallTrackerFetchInit = RequestInit | undefined;
-type OpenAICallTrackerFetchResponse = Response;
+type OpenAiCostTrackerFetchFn = typeof globalThis.fetch;
+type OpenAiCostTrackerFetchInput = string | URL | Request;
+type OpenAiCostTrackerFetchInit = RequestInit | undefined;
+type OpenAiCostTrackerFetchResponse = Response;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -17,14 +17,14 @@ type OpenAICallTrackerFetchResponse = Response;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-export type OpenAICallTrackerCallback = (
+export type OpenAiCostTrackerCallback = (
 	bucketId: string,
 	input: string | URL | Request,
 	init: RequestInit | undefined,
 	response: Response
 ) => Promise<void>;
 
-export class OpenAICallTracker {
+export class OpenAiCostTracker {
 
 	/**
 	 * This function returns a fetch function that can be passed to the OpenAI client. It is designed to track the usage of OpenAI API calls 
@@ -35,16 +35,16 @@ export class OpenAICallTracker {
 	 * @param originalFetch - the original fetch function to use for making API calls (default: global fetch)
 	 * @returns a fetch function that can be passed to the OpenAI client
 	 */
-	static async getFetchFn(trackerCallback: OpenAICallTrackerCallback, {
+	static async getFetchFn(trackerCallback: OpenAiCostTrackerCallback, {
 		bucketId = `openai_call_bucket`,
 		originalFetch = fetch
 	}: {
 		bucketId?: string,
-		originalFetch?: (input: OpenAICallTrackerFetchInput, init?: OpenAICallTrackerFetchInit) => Promise<OpenAICallTrackerFetchResponse>
+		originalFetch?: (input: OpenAiCostTrackerFetchInput, init?: OpenAiCostTrackerFetchInit) => Promise<OpenAiCostTrackerFetchResponse>
 	} = {}
-	): Promise<(input: OpenAICallTrackerFetchInput, init?: OpenAICallTrackerFetchInit) => Promise<OpenAICallTrackerFetchResponse>> {
+	): Promise<(input: OpenAiCostTrackerFetchInput, init?: OpenAiCostTrackerFetchInit) => Promise<OpenAiCostTrackerFetchResponse>> {
 
-		async function fetchTracker(input: OpenAICallTrackerFetchInput, init?: OpenAICallTrackerFetchInit): Promise<OpenAICallTrackerFetchResponse> {
+		async function fetchTracker(input: OpenAiCostTrackerFetchInput, init?: OpenAiCostTrackerFetchInit): Promise<OpenAiCostTrackerFetchResponse> {
 			// Call the original fetch function to get the response
 			const response = await originalFetch(input, init)
 

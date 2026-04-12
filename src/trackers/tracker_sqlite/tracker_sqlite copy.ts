@@ -9,7 +9,7 @@ import BetterSqlite3 from "better-sqlite3";
 
 // local imports
 import { OpenAiCostCalculator, OpenAiCostResponse } from "../../openai_cost_calculator";
-import { OpenAICallTrackerCallback } from "../../openai_call_tracker";
+import { OpenAICallTrackerCallback } from "../../openai_cost_tracker";
 
 // local imports
 
@@ -393,7 +393,7 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 		// Calculate cost
 		let costResponse: OpenAiCostResponse;
 		try {
-			costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiResponseUsage);
+			costResponse = await OpenAiCostCalculator.calculateLlmCost(modelName, openaiResponseUsage);
 		} catch (error) {
 			console.error(`Error calculating cost for trackerId ${bucketId}:`, error);
 			return;

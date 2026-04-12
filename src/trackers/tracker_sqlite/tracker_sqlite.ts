@@ -9,7 +9,7 @@ import BetterSqlite3 from "better-sqlite3";
 
 // local imports
 import { OpenAiCostCalculator, OpenAiCostResponse } from "../../openai_cost_calculator";
-import { OpenAICallTrackerCallback } from "../../openai_call_tracker";
+import { OpenAiCostTrackerCallback } from "../../openai_cost_tracker";
 
 // local imports
 
@@ -64,13 +64,10 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 	}
 
 	private _database: BetterSqlite3.Database;
-	private _dbPath: string;
 
 	constructor(dbPath: string) {
 		// call super constructor to initialize EventEmitter
 		super()
-		// store dbPath and initialize database connection
-		this._dbPath = dbPath;
 		// Initialize database synchronously
 		this._database = new BetterSqlite3(dbPath);
 	}
@@ -170,7 +167,7 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 	/**
 	 * Get the tracker callback function for use with OpenAI cost tracker
 	 */
-	async getTrackerCallback(): Promise<OpenAICallTrackerCallback> {
+	async getTrackerCallback(): Promise<OpenAiCostTrackerCallback> {
 		return this._trackerCallback.bind(this);
 	}
 
@@ -283,6 +280,7 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 			// Process each complete SSE event
 			const eventNameReponseCompleted = "response.completed";
 			for (const event of eventContents) {
+				// FIXME this works IIF using .responses API
 				const eventLines = event.split("\n");
 				// test if there is a line "event: response_completed\n" in the event content, which indicates the end of the stream 
 				// and contains the usage information in the data field
@@ -322,7 +320,7 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 				const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
 
 				// Calculate cost from usage information
-				const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiResponseUsage);
+				const costResponse = await OpenAiCostCalculator.calculateLlmCost(modelName, openaiResponseUsage);
 
 				// process the usage information (calculate cost and store in SQLite)
 				await this._trackerCallbackPostProcess(bucketId, costResponse, modelName, isFromCache);
@@ -358,7 +356,7 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 		const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
 
 		// Calculate cost from usage information
-		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiResponseUsage);
+		const costResponse = await OpenAiCostCalculator.calculateLlmCost(modelName, openaiResponseUsage);
 
 		// process the usage information (calculate cost and store in SQLite)
 		await this._trackerCallbackPostProcess(bucketId, costResponse, modelName, isFromCache);
