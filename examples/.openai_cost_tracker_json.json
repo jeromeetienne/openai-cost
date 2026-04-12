@@ -1,12 +1,12 @@
 {
-  "spent": {
-    "bucket-example": {
-      "totalCost": 0.000009800000000000001
+    "spent": {
+        "bucket-example": {
+            "totalCost": 0.000009800000000000001
+        }
+    },
+    "saved": {
+        "bucket-example": {
+            "totalCost": 0.000009800000000000001
+        }
     }
-  },
-  "saved": {
-    "bucket-example": {
-      "totalCost": 0.000009800000000000001
-    }
-  }
 }
