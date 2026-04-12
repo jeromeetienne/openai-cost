@@ -6,10 +6,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // get type for fetch() function and its parameters/return type
-type FetchFn = typeof globalThis.fetch;
-type FetchInput = Parameters<FetchFn>[0];
-type FetchInit = Parameters<FetchFn>[1];
-type FetchResponse = Awaited<ReturnType<FetchFn>>;
+type OpenAICallTrackerFetchFn = typeof globalThis.fetch;
+type OpenAICallTrackerFetchInput = string | URL | Request;
+type OpenAICallTrackerFetchInit = RequestInit | undefined;
+type OpenAICallTrackerFetchResponse = Response;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -17,7 +17,12 @@ type FetchResponse = Awaited<ReturnType<FetchFn>>;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-export type OpenAICallTrackerCallback = (bucketId: string, response: Response) => Promise<void>;
+export type OpenAICallTrackerCallback = (
+	bucketId: string,
+	input: string | URL | Request,
+	init: RequestInit | undefined,
+	response: Response
+) => Promise<void>;
 
 export class OpenAICallTracker {
 
@@ -35,18 +40,18 @@ export class OpenAICallTracker {
 		originalFetch = fetch
 	}: {
 		bucketId?: string,
-		originalFetch?: (input: FetchInput, init?: FetchInit) => Promise<FetchResponse>
+		originalFetch?: (input: OpenAICallTrackerFetchInput, init?: OpenAICallTrackerFetchInit) => Promise<OpenAICallTrackerFetchResponse>
 	} = {}
-	): Promise<(input: FetchInput, init?: FetchInit) => Promise<FetchResponse>> {
+	): Promise<(input: OpenAICallTrackerFetchInput, init?: OpenAICallTrackerFetchInit) => Promise<OpenAICallTrackerFetchResponse>> {
 
-		async function fetchTracker(input: FetchInput, init?: FetchInit): Promise<FetchResponse> {
+		async function fetchTracker(input: OpenAICallTrackerFetchInput, init?: OpenAICallTrackerFetchInit): Promise<OpenAICallTrackerFetchResponse> {
 			// Call the original fetch function to get the response
 			const response = await originalFetch(input, init)
 
 			if (trackerCallback) {
-				// TODO should we do that?
+				// TODO should we do that await?
 				// this will wait up to the end of the stream ... and then... deliver the first chunk to the caller
-				await trackerCallback(bucketId, response.clone());
+				await trackerCallback(bucketId, input, init, response.clone());
 			}
 
 			return response

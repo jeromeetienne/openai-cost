@@ -1,5 +1,6 @@
 // NPM imports
 import OpenAI from "openai";
+import { CreateEmbeddingResponse } from "openai/resources";
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -49,6 +50,8 @@ export type PriorityType = 'batch' | 'flex' | 'standard' | 'priority';
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+// # Prompt
+//
 // from https://developers.openai.com/api/docs/pricing
 // 1. take a screenshot of the pricing table
 // 2. in chatgpt, include the screenshot as image and ask :
@@ -66,6 +69,38 @@ export type PriorityType = 'batch' | 'flex' | 'standard' | 'priority';
 // ```
 
 export const pricingPerModel: PricingPerModel = {
+	///////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////
+	//	Embedding model
+	///////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////
+
+	'text-embedding-3-small': {
+		modelName: 'text-embedding-3-small',
+		inputPer1MTokens: 0.02,
+		cacheInputPer1MTokens: 0,
+		outputPer1MTokens: 0,
+	},
+	'text-embedding-3-large': {
+		modelName: 'text-embedding-3-large',
+		inputPer1MTokens: 0.13,
+		cacheInputPer1MTokens: 0,
+		outputPer1MTokens: 0,
+	},
+	'text-embedding-ada-002': {
+		modelName: 'text-embedding-ada-002',
+		inputPer1MTokens: 0.10,
+		cacheInputPer1MTokens: 0,
+		outputPer1MTokens: 0,
+	},
+
+
+	///////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////
+	//	
+	///////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////
+
 	'gpt-5.4 (<272K context length)': {
 		modelName: 'gpt-5.4 (<272K context length)',
 		inputPer1MTokens: 2.5,
@@ -309,8 +344,8 @@ export class OpenAiCostCalculator {
 	 * ```
 	 */
 	static async calculateCost(
-		modelName: string, 
-		openaiUsage: OpenAI.Responses.ResponseUsage, 
+		modelName: string,
+		openaiUsage: OpenAI.Responses.ResponseUsage,
 		priorityType: PriorityType = 'standard'
 	): Promise<OpenAiCostResponse> {
 		///////////////////////////////////////////////////////////////////////////////
@@ -325,9 +360,9 @@ export class OpenAiCostCalculator {
 		const modelIn272kCase = (modelName === 'gpt-5.4' || modelName === 'gpt-5.4-pro')
 		const totalInputTokens = openaiUsage.input_tokens + (openaiUsage.input_tokens_details?.cached_tokens || 0);
 		const usageIn272kCase = (totalInputTokens > 272_000);
-		if( modelIn272kCase && usageIn272kCase ) {
+		if (modelIn272kCase && usageIn272kCase) {
 			modelName = `${modelName} (>272K context length)`;
-		}else if (modelIn272kCase && usageIn272kCase === false) {
+		} else if (modelIn272kCase && usageIn272kCase === false) {
 			modelName = `${modelName} (<272K context length)`;
 		}
 
@@ -336,10 +371,10 @@ export class OpenAiCostCalculator {
 		//	Remove date suffix if needed
 		///////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////
-		
+
 		// Remove date suffix from modelName if present, to match the pricingPerModel keys
 		// - For example, if the modelName is `gpt-4o-2024-05-13`, we remove the `-2024-05-13` suffix to get `gpt-4o`, which is the key in pricingPerModel
-		const modelNameWithoutDate = modelName.replace(/-\d{4}-\d{2}-\d{2}$/, '');	
+		const modelNameWithoutDate = modelName.replace(/-\d{4}-\d{2}-\d{2}$/, '');
 		modelName = modelNameWithoutDate;
 
 
@@ -354,18 +389,18 @@ export class OpenAiCostCalculator {
 		//	Handle the priorityType for cost calculation
 		///////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////
-		
+
 		// Handle the priorityType for cost calculation
 		// - see details at https://developers.openai.com/api/docs/pricing#priority-tiers
 		// - Modify the inputPer1MTokens, cacheInputPer1MTokens, and outputPer1MTokens based on priorityType
 		let priorityPricingMultiplier = 1.0;
 		if (priorityType === 'batch') {
 			priorityPricingMultiplier = 0.5;
-		}else if (priorityType === 'flex') {
+		} else if (priorityType === 'flex') {
 			priorityPricingMultiplier = 0.5;
-		}else if (priorityType === 'standard') {
+		} else if (priorityType === 'standard') {
 			priorityPricingMultiplier = 1.0;
-		}else if (priorityType === 'priority') {
+		} else if (priorityType === 'priority') {
 			priorityPricingMultiplier = 2;
 		}
 		// apply the priorityPricingMultiplier to the pricingForModel
@@ -380,7 +415,7 @@ export class OpenAiCostCalculator {
 		//	Compute the cost for the usage
 		///////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////
-		
+
 
 		// NOTE: about input .cached_tokens and cost calculation
 		// - `.cached_tokens` are not included in `.input_tokens`, so both are included in the total input token count and cost calculation, 
@@ -408,7 +443,50 @@ export class OpenAiCostCalculator {
 		//	build the costResponse object and return it
 		///////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////
-		
+
+
+		// build the costResponse object and return it
+		const costResponse: OpenAiCostResponse = {
+			inputCost,
+			cacheInputCost,
+			outputCost,
+			totalCost,
+		}
+		return costResponse;
+	}
+
+	///////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////
+	//	
+	///////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * - https://developers.openai.com/api/docs/guides/embeddings
+	 * - https://developers.openai.com/api/docs/pricing#specialized-models
+	 * @param modelName 
+	 * @param embeddingUsage 
+	 */
+	static async calculateEmbeddingCost(
+		modelName: string,
+		embeddingUsage: CreateEmbeddingResponse.Usage,
+	): Promise<OpenAiCostResponse> {
+		// For embedding models, we only have input tokens and no output tokens, so we can calculate the cost using the input tokens 
+		// and the pricing information for the embedding model
+		const pricingForModel = pricingPerModel[modelName];
+		if (pricingForModel === undefined) {
+			throw new Error(`No pricing information found for embedding model ${modelName}`);
+		}
+
+		// Compute the input cost
+		const inputCost = (embeddingUsage.prompt_tokens / 1_000_000) * pricingForModel.inputPer1MTokens;
+
+		// For embedding models, there are no output tokens and no cached input tokens, so those costs are 0
+		const cacheInputCost = 0;
+		const outputCost = 0;
+
+		// compute total cost
+		const totalCost = inputCost + cacheInputCost + outputCost;
 
 		// build the costResponse object and return it
 		const costResponse: OpenAiCostResponse = {

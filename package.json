@@ -37,6 +37,7 @@
         "tracker_json:clean": "rm -f ./examples/.openai_cost_tracker_json.json",
         "build": "tsc -p tsconfig.build.json",
         "publish:all": "npm run build && npm version patch && npm publish --access public",
+        "typecheck": "tsc --noEmit",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [

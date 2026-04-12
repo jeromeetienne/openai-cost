@@ -123,9 +123,16 @@ export class OpenAICostTrackerJson extends EventEmitter {
 	 * costs in a custom way (e.g. save to a database, send to an analytics service, etc)
 	 * 
 	 * @param bucketId - an identifier for the tracker, used to group usage information
+	 * @param input - the input to the fetch function
+	 * @param init - the init object for the fetch function
 	 * @param response - the response from the OpenAI API, which contains the usage information in the body
 	 */
-	private async _trackerCallback(bucketId: string, response: Response) {
+	private async _trackerCallback(
+		bucketId: string,
+		input: string | URL | Request,
+		init: RequestInit | undefined,
+		response: Response
+	): Promise<void> {
 		// robust parsing - to get modelName and usage information from the response, with error handling
 		const responseBody = await response.json().catch(() => null);
 		const modelName = responseBody?.model;

@@ -13,6 +13,7 @@ import Chalk from "chalk";
 import { OpenAiCostCalculator } from "../src/openai_cost_calculator";
 import { OpenAICallTracker } from "../src/openai_call_tracker";
 import { OpenAICostTrackerJson, OpenAICostTrackerJsonBucketWrittenPayload } from "../src/trackers/tracker_json/tracker_json";
+import { ExampleHelper } from "./libs/example_helper";
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -53,7 +54,7 @@ async function main() {
 
 	// Build the fetch function with tracking capabilities, using the OpenAICache fetch as the original fetch implementation
 	const fetchWithTracking = await OpenAICallTracker.getFetchFn(await trackerJson.getTrackerCallback(), {
-		bucketId: `bucket-example`,
+		bucketId: `bucket-openai-cost-tracker-json-example`,
 		originalFetch: openaiCache.getFetchFn(),
 	});
 
@@ -70,92 +71,6 @@ async function main() {
 		// increased timeout to ease debugging
 		timeout: 60_000,
 	});
-
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-	//	function doCallNoStream() - makes a non-streamed API call
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-
-	async function doCallNoStream() {
-		const prompt = `hello world`
-		const modelName = 'gpt-4.1-nano';
-
-		// measure call start time
-		const callStart = Date.now();
-
-		console.log(`making first API call...`);
-		const response1 = await openaiClient.responses.create({
-			model: modelName,
-			input: prompt,
-		});
-
-		// calculate the cost of the API call using the OpenAiCostCalculator
-		const openaiUsage: OpenAI.Responses.ResponseUsage = response1.usage!
-		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiUsage);
-		// measure call elapsed time
-		const callElapsed = Date.now() - callStart;
-
-		// display info about the call
-		console.log(`openai usage:`, JSON.stringify(openaiUsage));
-		console.log(`cost response (cache untracked):`, JSON.stringify(costResponse));
-		console.log(`cost for this response (cache untracked): $${costResponse.totalCost.toFixed(6)} - ${(1 / costResponse.totalCost).toFixed(2)} call/usd`);
-		console.log(`duration: ${Chalk.cyan(callElapsed)} ms`);
-
-		// return the usage, cost response and elapsed time for this call
-		return { openaiUsage, costResponse, callElapsed }
-	}
-
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-	//	function doCallStreamed() - makes a streamed API call
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-
-	async function doCallStreamed() {
-		const prompt = `hello world`
-		const modelName = 'gpt-4.1-nano';
-
-		// measure call start time
-		const callStart = Date.now();
-
-		// Make a streamed API call - with streaming, to get the response usage and calculate the cost of the API call using the OpenAiCostCalculator
-		const responseStreamEvents = await openaiClient.responses.create({
-			model: modelName,
-			input: prompt,
-			stream: true,
-		});
-
-		// Get ResponseUsage from the response
-		// Note: with streamed responses, the usage is only available in the final event of the stream, which is the ResponseCompletedEvent
-		// so we will consume the stream events until we get to the final event, and then get the usage from there
-
-		// consume all the events from the response stream, which will trigger the cost tracking in the OpenAICallTracker
-		let responseStreamEvent: OpenAI.Responses.ResponseStreamEvent
-		for await (responseStreamEvent of responseStreamEvents) {
-			// console.log(`- streamed event type: ${responseStreamEvent.type} - ${JSON.stringify(responseStreamEvent)}`);
-			process.stdout.write(`.`);
-		}
-		process.stdout.write(`\n`);
-
-		// Get ResponseUsage from the final response event
-		const responseCompletedEvent = responseStreamEvent! as OpenAI.Responses.ResponseCompletedEvent;
-		const openaiUsage: OpenAI.Responses.ResponseUsage = responseCompletedEvent.response.usage!
-
-		// calculate the cost of the API call using the OpenAiCostCalculator
-		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiUsage);
-		// measure call elapsed time
-		const callElapsed = Date.now() - callStart;
-
-		// display info about the call
-		console.log(`openai usage:`, JSON.stringify(openaiUsage));
-		console.log(`cost response (cache untracked):`, JSON.stringify(costResponse));
-		console.log(`cost for this response (cache untracked): $${costResponse.totalCost.toFixed(6)} - ${(1 / costResponse.totalCost).toFixed(2)} call/usd`);
-		console.log(`duration: ${Chalk.cyan(callElapsed)} ms`);
-
-		// return the usage, cost response and elapsed time for this call
-		return { openaiUsage, costResponse, callElapsed }
-	}
 
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
@@ -195,21 +110,21 @@ async function main() {
 		console.log()
 		console.log(`--- ${Chalk.magenta('First call (nostream) (NOT CACHED)')} ---`)
 		trackerJson.addListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSpent);
-		const { openaiUsage: call1OpenaiUsage, costResponse: call1CostResponse, callElapsed: call1Elapsed } = await doCallNoStream();
+		const response1 = await ExampleHelper.doCallNoStream(openaiClient);
 		trackerJson.removeListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSpent);
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('Second call (nostream) (IN CACHE)')} ---`)
 		trackerJson.addListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSaved);
-		const { openaiUsage: call2OpenaiUsage, costResponse: call2CostResponse, callElapsed: call2Elapsed } = await doCallNoStream();
+		const response2 = await ExampleHelper.doCallNoStream(openaiClient);
 		trackerJson.removeListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSaved);
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('Result (nostream)')} ---`);
 		console.log(`Cached call should be much faster than the non-cached call.`);
-		const speedupFactor = call1Elapsed / call2Elapsed;
+		const speedupFactor = response1.callElapsed / response2.callElapsed;
 		console.log(`speedup factor (due to cache): ${speedupFactor > 10 ? Chalk.green(speedupFactor.toFixed(2)) : Chalk.red(speedupFactor.toFixed(2))}x`);
-		const costDifference = call1CostResponse.totalCost - call2CostResponse.totalCost;
+		const costDifference = response1.costResponse.totalCost - response2.costResponse.totalCost;
 		console.log(`cost difference (between calls): $${costDifference.toFixed(6)}`);
 	}
 
@@ -232,21 +147,21 @@ async function main() {
 		console.log()
 		console.log(`--- ${Chalk.magenta('First call (streamed) (NOT CACHED)')} ---`)
 		trackerJson.addListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSpent);
-		const { openaiUsage: call1OpenaiUsage, costResponse: call1CostResponse, callElapsed: call1Elapsed } = await doCallStreamed();
+		const response1 = await ExampleHelper.doCallStreamed(openaiClient);
 		trackerJson.removeListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSpent);
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('Second call (streamed) (IN CACHE)')} ---`)
 		trackerJson.addListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSaved);
-		const { openaiUsage: call2OpenaiUsage, costResponse: call2CostResponse, callElapsed: call2Elapsed } = await doCallStreamed();
+		const response2 = await ExampleHelper.doCallStreamed(openaiClient);
 		trackerJson.removeListener(OpenAICostTrackerJson.EVENT.BUCKET_WRITTEN, onBucketWrittenExpectCostSaved);
 
 		console.log()
 		console.log(`--- ${Chalk.magenta('Result (streamed)')} ---`);
 		console.log(`Cached call should be much faster than the non-cached call. Call's cost should be the same (as it is not tracked)`);
-		const speedupFactor = call1Elapsed / call2Elapsed;
+		const speedupFactor = response1.callElapsed / response2.callElapsed;
 		console.log(`speedup factor (due to cache): ${speedupFactor > 10 ? Chalk.green(speedupFactor.toFixed(2)) : Chalk.red(speedupFactor.toFixed(2))}x`);
-		const costDifference = call1CostResponse.totalCost - call2CostResponse.totalCost;
+		const costDifference = response1.costResponse.totalCost - response2.costResponse.totalCost;
 		console.log(`cost difference (cost untracked): $${costDifference.toFixed(6)}`);
 	}
 

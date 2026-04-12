@@ -211,13 +211,13 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 		if (contentType !== null) {
 			// handle if content-type is text/event-stream (for streamed responses)
 			if (contentType.includes("text/event-stream")) {
-				await this._trackerCallback_Responses_EventStream(bucketId, response);
+				await this._trackerCallback_EventStream(bucketId, response);
 				return
 			}
 
 			// handle if content-type is application/json (for non-streamed responses)
 			if (contentType.includes("application/json") && isEmbeddingsEndpoint === false) {
-				await this._trackerCallback_Responses_ApplicationJson(bucketId, response);
+				await this._trackerCallback_ApplicationJson(bucketId, response);
 				return
 			}
 
@@ -243,7 +243,7 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 	 * @param bucketId - identifier for grouping costs
 	 * @param response - OpenAI API response
 	 */
-	private async _trackerCallback_Responses_EventStream(bucketId: string, response: Response): Promise<void> {
+	private async _trackerCallback_EventStream(bucketId: string, response: Response): Promise<void> {
 		// sanity check - ensure content type is text/event-stream, otherwise we may not be able to parse the response correctly
 		const contentType = response.headers.get("Content-Type")
 		if (contentType === null || contentType.includes("text/event-stream") !== true) {
@@ -310,10 +310,10 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 
 				// extract model name and usage information from the data JSON
 				const modelName = responseCompletedEvent.response?.model;
-				const openaiResponseUsage: OpenAI.Responses.ResponseUsage | undefined = responseCompletedEvent.response?.usage;
+				const openaiResponseusage: OpenAI.Responses.ResponseUsage | undefined = responseCompletedEvent.response?.usage;
 
 				// if model name or usage information is missing, throw an error
-				if (openaiResponseUsage === undefined || modelName === undefined) {
+				if (openaiResponseusage === undefined || modelName === undefined) {
 					console.error(`Could not extract usage information from data JSON in "${eventNameReponseCompleted}" event for bucketId ${bucketId}`);
 					return;
 				}
@@ -321,11 +321,8 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 				// Check if response is from cache
 				const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
 
-				// Calculate cost from usage information
-				const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiResponseUsage);
-
 				// process the usage information (calculate cost and store in SQLite)
-				await this._trackerCallbackPostProcess(bucketId, costResponse, modelName, isFromCache);
+				await this._trackerCallbackPostProcess(bucketId, openaiResponseusage, modelName, isFromCache);
 			}
 		}
 	}
@@ -336,7 +333,7 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 	 * @param bucketId - identifier for grouping costs
 	 * @param response - OpenAI API response
 	 */
-	private async _trackerCallback_Responses_ApplicationJson(bucketId: string, response: Response): Promise<void> {
+	private async _trackerCallback_ApplicationJson(bucketId: string, response: Response): Promise<void> {
 		// sanity check - ensure content type is application/json, otherwise we may not be able to parse the response correctly
 		const contentType = response.headers.get("Content-Type")
 		if (contentType === null || contentType.includes("application/json") !== true) {
@@ -355,13 +352,14 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 		}
 
 		// Check if response is from cache
+		// const isFromCache = responseBodyJson[OpenAICache.MARK_RESPONSE_NAME] === true;
 		const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
 
-		// Calculate cost from usage information
-		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiResponseUsage);
+		console.log(`isFromCache: ${isFromCache}`);
+		// console.log(`openai-cost headers`, Array.from(response.headers.entries()));
 
 		// process the usage information (calculate cost and store in SQLite)
-		await this._trackerCallbackPostProcess(bucketId, costResponse, modelName, isFromCache);
+		await this._trackerCallbackPostProcess(bucketId, openaiResponseUsage, modelName, isFromCache);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
@@ -371,30 +369,8 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 	///////////////////////////////////////////////////////////////////////////////
 
 	private async _trackerCallback_Embeddings(bucketId: string, response: Response): Promise<void> {
-		// sanity check - ensure content type is application/json, otherwise we may not be able to parse the response correctly
-		const contentType = response.headers.get("Content-Type")
-		if (contentType === null || contentType.includes("application/json") !== true) {
-			throw new Error(`Unexpected content type in response for bucketId ${bucketId}: expected "application/json", got ${contentType}`);
-		}
-
-		// Parse response as json to extract model and usage info
-		const responseBodyJson = await response.json().catch(() => null);
-		const modelName: string | undefined = responseBodyJson?.model;
-		const openaiEmbeddingUsage: OpenAI.Embeddings.CreateEmbeddingResponse.Usage | undefined = responseBodyJson?.usage;
-
-		if (openaiEmbeddingUsage === undefined || modelName === undefined) {
-			console.warn(`Could not extract usage information from response for trackerId ${bucketId}`);
-			return;
-		}
-
-		// Check if response is from cache
-		const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
-
-		// Calculate cost from usage information
-		const costResponse = await OpenAiCostCalculator.calculateEmbeddingCost(modelName, openaiEmbeddingUsage);
-
-		// process the usage information (calculate cost and store in SQLite)
-		await this._trackerCallbackPostProcess(bucketId, costResponse, modelName, isFromCache);
+		// For embeddings endpoint, the response does not include usage information, so we will not be able to track costs for it, but we can still log the calls for visibility
+		console.warn(`Received response for embeddings endpoint in tracker callback for bucketId ${bucketId}. Cost tracking is not supported for embeddings endpoint due to lack of usage information in the response, but the call will be logged for visibility.`);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
@@ -410,10 +386,19 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 	 */
 	private async _trackerCallbackPostProcess(
 		bucketId: string,
-		costResponse: OpenAiCostResponse,
+		openaiResponseUsage: OpenAI.Responses.ResponseUsage,
 		modelName: string,
 		isFromCache: boolean
 	): Promise<void> {
+		// Calculate cost
+		let costResponse: OpenAiCostResponse;
+		try {
+			costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiResponseUsage);
+		} catch (error) {
+			console.error(`Error calculating cost for trackerId ${bucketId}:`, error);
+			return;
+		}
+
 		// Get current timestamp in full ISO 8601 format
 		const dateIso = new Date().toISOString();
 		const costAmount = costResponse.totalCost;
