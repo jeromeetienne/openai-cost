@@ -32,7 +32,6 @@ async function main() {
 	const openaiCache = new OpenAICache(sqliteCache, {
 		markResponseEnabled: true, // this will add a custom header to the response to indicate if it was from the cache or not
 	});
-	// await openaiCache.cleanCache(); // clean the cache before starting the example
 
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
@@ -99,7 +98,7 @@ async function main() {
 	///////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////
 
-	if (false) {
+	if (true) {
 		console.log()
 		console.log(Chalk.yellow(`==================================`));
 		console.log(`${Chalk.yellow('Making nostream API calls to calculate cost (tracked)')}`);
@@ -135,7 +134,7 @@ async function main() {
 	///////////////////////////////////////////////////////////////////////////////
 
 
-	if (false) {
+	if (true) {
 		console.log()
 		console.log(Chalk.yellow(`==================================`));
 		console.log(`${Chalk.yellow('Making streamed API calls to calculate cost (non-tracked)')}`);

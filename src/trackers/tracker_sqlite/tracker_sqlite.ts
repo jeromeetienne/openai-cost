@@ -450,13 +450,11 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 			console.log("No tracked costs found");
 			return;
 		}
+		const costSpentStr = (Math.ceil(summary.total.costSpent * 1e6) / 1e6).toFixed(6);
+		const costSavedStr = (Math.ceil(summary.total.costSaved * 1e6) / 1e6).toFixed(6);
 
-		const totalSpentStr = colorize
-			? Chalk.red(`$${summary.total.costSpent.toFixed(6)}`)
-			: `$${summary.total.costSpent.toFixed(6)}`;
-		const totalSavedStr = colorize
-			? Chalk.green(`$${summary.total.costSaved.toFixed(6)}`)
-			: `$${summary.total.costSaved.toFixed(6)}`;
+		const totalSpentStr = colorize ? Chalk.red(`$${costSpentStr}`) : `$${costSpentStr}`;
+		const totalSavedStr = colorize ? Chalk.green(`$${costSavedStr}`) : `$${costSavedStr}`;
 
 		console.log(`Overall Total - Cost Spent: ${totalSpentStr}, Cost Saved: ${totalSavedStr}`);
 
@@ -464,26 +462,23 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 			const bucketIdStr = colorize ? Chalk.blue(bucket.bucketId) : bucket.bucketId;
 			console.log(`Bucket: ${bucketIdStr}`);
 
-			const bucketSpentStr = colorize
-				? Chalk.red(`$${bucket.costSpent.toFixed(6)}`)
-				: `$${bucket.costSpent.toFixed(6)}`;
-			const bucketSavedStr = colorize
-				? Chalk.green(`$${bucket.costSaved.toFixed(6)}`)
-				: `$${bucket.costSaved.toFixed(6)}`;
+			const bucketCostSpentStr = (Math.ceil(bucket.costSpent * 1e6) / 1e6).toFixed(6);
+			const bucketCostSavedStr = (Math.ceil(bucket.costSaved * 1e6) / 1e6).toFixed(6);
+			const bucketSpentStr = colorize ? Chalk.red(`$${bucketCostSpentStr}`) : `$${bucketCostSpentStr}`;
+			const bucketSavedStr = colorize ? Chalk.green(`$${bucketCostSavedStr}`) : `$${bucketCostSavedStr}`;
 
 			console.log(`   Total - Cost Spent: ${bucketSpentStr}, Cost Saved: ${bucketSavedStr}`);
 
 			for (const model of bucket.models) {
 				const modelStr = colorize ? Chalk.blue(model.modelName) : model.modelName;
-				const spentStr = colorize
-					? Chalk.red(`$${model.costSpent.toFixed(6)}`)
-					: `$${model.costSpent.toFixed(6)}`;
-				const savedStr = colorize
-					? Chalk.green(`$${model.costSaved.toFixed(6)}`)
-					: `$${model.costSaved.toFixed(6)}`;
+
+				const modelCostSpentStr = (Math.ceil(model.costSpent * 1e6) / 1e6).toFixed(6);
+				const modelCostSavedStr = (Math.ceil(model.costSaved * 1e6) / 1e6).toFixed(6);
+				const modelSpentStr = colorize ? Chalk.red(`$${modelCostSpentStr}`) : `$${modelCostSpentStr}`;
+				const modelSavedStr = colorize ? Chalk.green(`$${modelCostSavedStr}`) : `$${modelCostSavedStr}`;
 
 				console.log(
-					`   Model: ${modelStr} - Cost Spent: ${spentStr}, Cost Saved: ${savedStr}`
+					`   Model: ${modelStr} - Cost Spent: ${modelSpentStr}, Cost Saved: ${modelSavedStr}`
 				);
 			}
 		}
