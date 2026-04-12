@@ -49,9 +49,15 @@ export class OpenAICallTracker {
 			const response = await originalFetch(input, init)
 
 			if (trackerCallback) {
-				// TODO should we do that await?
-				// this will wait up to the end of the stream ... and then... deliver the first chunk to the caller
-				await trackerCallback(bucketId, input, init, response.clone());
+				// IMPORTANT: Do NOT await this call. Here is why:
+				// - response.clone() tees the stream, creating two independent readers: the original and the clone.
+				// - The callback receives the clone and reads it fully to extract usage data (e.g. the "response.completed" SSE event).
+				// - If we awaited, the callback would consume the entire cloned stream before we return the original response
+				//   to the caller. This would block the caller from receiving any chunks until the full response is done,
+				//   effectively defeating streaming (all chunks arrive at once instead of incrementally).
+				// - Without await, the original response is returned immediately to the caller, who can iterate chunks in real-time.
+				//   Meanwhile, the callback reads the cloned stream in the background independently.
+				trackerCallback(bucketId, input, init, response.clone());
 			}
 
 			return response
