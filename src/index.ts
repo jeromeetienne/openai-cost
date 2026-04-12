@@ -3,10 +3,10 @@ export type { OpenAICallTrackerCallback } from "./openai_call_tracker";
 
 export { OpenAiCostCalculator, pricingPerModel } from "./openai_cost_calculator";
 export type {
-  OpenAiCostResponse,
-  PricingForModel,
-  PricingPerModel,
-  PriorityType,
+	OpenAiCostResponse,
+	PricingForModel,
+	PricingPerModel,
+	PriorityType,
 } from "./openai_cost_calculator";
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -15,5 +15,4 @@ export type {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-export * from "./trackers/tracker_json/tracker_json"
 export * from "./trackers/tracker_sqlite/tracker_sqlite"
