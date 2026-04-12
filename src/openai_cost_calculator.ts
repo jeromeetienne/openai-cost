@@ -68,39 +68,7 @@ export type PriorityType = 'batch' | 'flex' | 'standard' | 'priority';
 // }
 // ```
 
-export const pricingPerModel: PricingPerModel = {
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-	//	Embedding model
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-
-	'text-embedding-3-small': {
-		modelName: 'text-embedding-3-small',
-		inputPer1MTokens: 0.02,
-		cacheInputPer1MTokens: 0,
-		outputPer1MTokens: 0,
-	},
-	'text-embedding-3-large': {
-		modelName: 'text-embedding-3-large',
-		inputPer1MTokens: 0.13,
-		cacheInputPer1MTokens: 0,
-		outputPer1MTokens: 0,
-	},
-	'text-embedding-ada-002': {
-		modelName: 'text-embedding-ada-002',
-		inputPer1MTokens: 0.10,
-		cacheInputPer1MTokens: 0,
-		outputPer1MTokens: 0,
-	},
-
-
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-	//	
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-
+export const pricingPerModelLlm: PricingPerModel = {
 	'gpt-5.4 (<272K context length)': {
 		modelName: 'gpt-5.4 (<272K context length)',
 		inputPer1MTokens: 2.5,
@@ -319,6 +287,33 @@ export const pricingPerModel: PricingPerModel = {
 	},
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//	Embedding model
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+export const pricingPerModelEmbedding: PricingPerModel = {
+	'text-embedding-3-small': {
+		modelName: 'text-embedding-3-small',
+		inputPer1MTokens: 0.02,
+		cacheInputPer1MTokens: 0,
+		outputPer1MTokens: 0,
+	},
+	'text-embedding-3-large': {
+		modelName: 'text-embedding-3-large',
+		inputPer1MTokens: 0.13,
+		cacheInputPer1MTokens: 0,
+		outputPer1MTokens: 0,
+	},
+	'text-embedding-ada-002': {
+		modelName: 'text-embedding-ada-002',
+		inputPer1MTokens: 0.10,
+		cacheInputPer1MTokens: 0,
+		outputPer1MTokens: 0,
+	},
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -379,7 +374,7 @@ export class OpenAiCostCalculator {
 
 
 		// get pricing information for the model
-		const pricingForModel = pricingPerModel[modelName];
+		const pricingForModel = pricingPerModelLlm[modelName];
 		if (pricingForModel === undefined) {
 			throw new Error(`No pricing information found for model ${modelName}`);
 		}
@@ -473,7 +468,7 @@ export class OpenAiCostCalculator {
 	): Promise<OpenAiCostResponse> {
 		// For embedding models, we only have input tokens and no output tokens, so we can calculate the cost using the input tokens 
 		// and the pricing information for the embedding model
-		const pricingForModel = pricingPerModel[modelName];
+		const pricingForModel = pricingPerModelEmbedding[modelName];
 		if (pricingForModel === undefined) {
 			throw new Error(`No pricing information found for embedding model ${modelName}`);
 		}
