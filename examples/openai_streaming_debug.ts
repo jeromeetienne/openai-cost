@@ -18,6 +18,7 @@ async function main() {
 	const sqlitePath = `sqlite://${Path.resolve(__dirname, `./.openai_cache.sqlite`)}`;
 	const sqliteCache = new Cacheable({ secondary: new KeyvSqlite(sqlitePath) });
 	const openaiCache = new OpenAICache(sqliteCache, {
+		markResponseEnabled: true, // mark responses as cacheable when possible
 		verboseLevel: 2, // enable verbose logging to see when cache is hit or missed
 	});
 
@@ -62,7 +63,7 @@ async function main() {
 		// Streaming using the responses API, which is the recommended way to do streaming calls with the new OpenAI client. 
 		// This allows us to track usage and costs in real - time as the stream progresses.
 		const stream = await openaiClient.responses.create({
-			model: "gpt-4.1",
+			model: "gpt-4.1-nano",
 			input: "explain quantum theory in simple terms",
 			stream: true,
 		});
@@ -76,7 +77,7 @@ async function main() {
 	if (false) {
 		// Streaming using the chat.completions API, which also works but is not the recommended way to do streaming calls with the new OpenAI client.
 		const stream = await openaiClient.chat.completions.create({
-			model: "gpt-4o",
+			model: "gpt-4o-nano",
 			messages: [
 				{
 					role: "user",
