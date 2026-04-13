@@ -33,6 +33,7 @@
         "openai_cost:watch": "tsx ./src/trackers/tracker_sqlite/bin/tracker_sqlite_pp.ts -i ./examples/.openai_cost_tracker.sqlite -w",
         "openai_cache:clean": "rm -f ./examples/.openai_cache.sqlite",
         "openai_cost_tracker:clean": "rm -f ./examples/.openai_cost_tracker.sqlite",
+        "clean:all": "npm run openai_cache:clean && npm run openai_cost_tracker:clean",
         "build": "tsc -p tsconfig.build.json",
         "publish:all": "npm run build && npm version patch && npm publish --access public",
         "typecheck": "tsc --noEmit",
