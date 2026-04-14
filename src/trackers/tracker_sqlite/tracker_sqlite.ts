@@ -4,49 +4,17 @@ import { EventEmitter } from "events";
 // npm imports
 import OpenAI from "openai";
 import OpenAICache from "openai-cache";
-import Chalk from "chalk";
 import BetterSqlite3 from "better-sqlite3";
 
 // local imports
 import { OpenAiCostCalculator, OpenAiCostResponse } from "../../openai_cost_calculator";
 import { OpenAiCostTrackerCallback } from "../../openai_cost_tracker";
-
-// local imports
-
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-//	typescript types
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-export type OpenAiCostTrackerSqliteEntry = {
-	dateIso: string;
-	bucketId: string;
-	modelName: string;
-	costSpent: number;
-	costSaved: number;
-}
-
-export type OpenAiCostTrackerSqliteModelCost = {
-	modelName: string;
-	costSpent: number;
-	costSaved: number;
-}
-
-export type OpenAiCostTrackerSqliteBucketCost = {
-	bucketId: string;
-	costSpent: number;
-	costSaved: number;
-	models: OpenAiCostTrackerSqliteModelCost[];
-}
-
-export type OpenAiCostTrackerSqliteCostSummary = {
-	total: {
-		costSpent: number;
-		costSaved: number;
-	};
-	buckets: OpenAiCostTrackerSqliteBucketCost[];
-}
+import {
+	OpenAiCostTrackerSqliteEntry,
+	OpenAiCostTrackerSqliteBucketCost,
+	OpenAiCostTrackerSqliteCostSummary,
+	OpenAiCostTrackerSqliteModelCost
+} from "./tracker_sqlite_type";
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -432,70 +400,6 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 			"INSERT INTO cost_tracking (dateIso, bucketId, modelName, costSpent, costSaved) VALUES (?, ?, ?, ?, ?)"
 		);
 		insertStmt.run(dateIso, bucketId, modelName, costSpent, costSaved);
-	}
-
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-	//	Static Methods
-	///////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////
-
-	/**
-	 * Print cost summary in a formatted, colorized output
-	 */
-	static async printCostSummary(summary: OpenAiCostTrackerSqliteCostSummary, { colorize = true }: { colorize?: boolean } = {}): Promise<void> {
-		if (summary.buckets.length === 0) {
-			console.log("No tracked costs found");
-			return;
-		}
-		const costSpentStr = (Math.ceil(summary.total.costSpent * 1e6) / 1e6).toFixed(6);
-		const costSavedStr = (Math.ceil(summary.total.costSaved * 1e6) / 1e6).toFixed(6);
-
-		const totalSpentStr = colorize ? Chalk.red(`$${costSpentStr}`) : `$${costSpentStr}`;
-		const totalSavedStr = colorize ? Chalk.green(`$${costSavedStr}`) : `$${costSavedStr}`;
-
-		console.log(`Overall Total - Cost Spent: ${totalSpentStr}, Cost Saved: ${totalSavedStr}`);
-
-		for (const bucket of summary.buckets) {
-			const bucketIdStr = colorize ? Chalk.blue(bucket.bucketId) : bucket.bucketId;
-			console.log(`Bucket: ${bucketIdStr}`);
-
-			const bucketCostSpentStr = (Math.ceil(bucket.costSpent * 1e6) / 1e6).toFixed(6);
-			const bucketCostSavedStr = (Math.ceil(bucket.costSaved * 1e6) / 1e6).toFixed(6);
-			const bucketSpentStr = colorize ? Chalk.red(`$${bucketCostSpentStr}`) : `$${bucketCostSpentStr}`;
-			const bucketSavedStr = colorize ? Chalk.green(`$${bucketCostSavedStr}`) : `$${bucketCostSavedStr}`;
-
-			console.log(`   Total - Cost Spent: ${bucketSpentStr}, Cost Saved: ${bucketSavedStr}`);
-
-			for (const model of bucket.models) {
-				const modelStr = colorize ? Chalk.blue(model.modelName) : model.modelName;
-
-				const modelCostSpentStr = (Math.ceil(model.costSpent * 1e6) / 1e6).toFixed(6);
-				const modelCostSavedStr = (Math.ceil(model.costSaved * 1e6) / 1e6).toFixed(6);
-				const modelSpentStr = colorize ? Chalk.red(`$${modelCostSpentStr}`) : `$${modelCostSpentStr}`;
-				const modelSavedStr = colorize ? Chalk.green(`$${modelCostSavedStr}`) : `$${modelCostSavedStr}`;
-
-				console.log(
-					`   Model: ${modelStr} - Cost Spent: ${modelSpentStr}, Cost Saved: ${modelSavedStr}`
-				);
-			}
-		}
-	}
-
-	/**
-	 * Convert cost tracking records to CSV format
-	 */
-	static recordsToCsv(records: OpenAiCostTrackerSqliteEntry[]): string {
-		if (records.length === 0) {
-			return "dateIso,bucketId,modelName,costSpent,costSaved\n";
-		}
-
-		const header = "dateIso,bucketId,modelName,costSpent,costSaved";
-		const rows = records.map(record => {
-			return `${record.dateIso},${record.bucketId},${record.modelName},${record.costSpent},${record.costSaved}`;
-		});
-
-		return [header, ...rows].join("\n");
 	}
 }
 
