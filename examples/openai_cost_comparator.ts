@@ -37,6 +37,8 @@ async function main() {
 
 	const modelNames = [
 		'gpt-5.4',
+		'gpt-5.4-mini',
+		'gpt-5.4-nano',
 		'gpt-5.2',
 		'gpt-5-mini',
 		'gpt-5-nano',
@@ -58,7 +60,7 @@ async function main() {
 		const openaiUsage: OpenAI.Responses.ResponseUsage = response.usage!
 
 		// console.log(`openai model=${chalk.green(modelName)} usage:`, openaiUsage);
-		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiUsage);
+		const costResponse = await OpenAiCostCalculator.calculateLlmCost(modelName, openaiUsage);
 		costResponsePerName[modelName] = costResponse;
 
 		const firstModelName = modelNames[0];

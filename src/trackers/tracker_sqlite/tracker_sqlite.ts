@@ -394,7 +394,7 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 			costSaved
 		}
 		this.emit(OpenAiCostTrackerSqlite.EVENT.BUCKET_WRITTEN, eventPayload);
-
+		debugger
 		// Append new record to database
 		const insertStmt = this._database.prepare(
 			"INSERT INTO cost_tracking (dateIso, bucketId, modelName, costSpent, costSaved) VALUES (?, ?, ?, ?, ?)"

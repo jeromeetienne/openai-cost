@@ -93,6 +93,18 @@ export const pricingPerModelLlm: PricingPerModel = {
 		cacheInputPer1MTokens: undefined,
 		outputPer1MTokens: 270.0,
 	},
+	'gpt-5.4-mini': {
+		modelName: 'gpt-5.4-mini',
+		inputPer1MTokens: 0.75,
+		cacheInputPer1MTokens: 0.075,
+		outputPer1MTokens: 4.5,
+	},
+	'gpt-5.4-nano': {
+		modelName: 'gpt-5.4-nano',
+		inputPer1MTokens: 0.2,
+		cacheInputPer1MTokens: 0.2,
+		outputPer1MTokens: 1.25,
+	},
 	'gpt-5.2': {
 		modelName: 'gpt-5.2',
 		inputPer1MTokens: 1.75,
