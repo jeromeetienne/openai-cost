@@ -315,7 +315,6 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 		const openaiResponseUsage: OpenAI.Responses.ResponseUsage | undefined = responseBodyJson?.usage;
 
 		if (openaiResponseUsage === undefined || modelName === undefined) {
-			debugger
 			console.warn(`Could not extract usage information from response for trackerId ${bucketId}`);
 			return;
 		}
@@ -394,7 +393,6 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 			costSaved
 		}
 		this.emit(OpenAiCostTrackerSqlite.EVENT.BUCKET_WRITTEN, eventPayload);
-		debugger
 		// Append new record to database
 		const insertStmt = this._database.prepare(
 			"INSERT INTO cost_tracking (dateIso, bucketId, modelName, costSpent, costSaved) VALUES (?, ?, ?, ?, ?)"
