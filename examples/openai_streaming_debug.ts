@@ -69,6 +69,7 @@ async function main() {
 		});
 		for await (const event of stream) {
 			if (event.type === "response.output_text.delta") {
+				// @ts-ignore
 				process.stdout.write(event.delta);
 			}
 		}
