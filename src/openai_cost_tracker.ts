@@ -45,6 +45,10 @@ export class OpenAiCostTracker {
 	): Promise<(input: OpenAiCostTrackerFetchInput, init?: OpenAiCostTrackerFetchInit) => Promise<OpenAiCostTrackerFetchResponse>> {
 
 		async function fetchTracker(input: OpenAiCostTrackerFetchInput, init?: OpenAiCostTrackerFetchInit): Promise<OpenAiCostTrackerFetchResponse> {
+			// Auto-inject `stream_options.include_usage = true` for streamed /chat/completions requests, so that
+			// the usage block is emitted in the SSE stream and cost tracking works without the caller opting in.
+			init = OpenAiCostTracker._maybeInjectIncludeUsage(input, init);
+
 			// Call the original fetch function to get the response
 			const response = await originalFetch(input, init)
 
@@ -75,6 +79,33 @@ export class OpenAiCostTracker {
 		}
 		// return the tracker function that will be passed to OpenAI client
 		return fetchTracker;
+	}
+
+	private static _maybeInjectIncludeUsage(
+		input: OpenAiCostTrackerFetchInput,
+		init: OpenAiCostTrackerFetchInit
+	): OpenAiCostTrackerFetchInit {
+		// Only handle the string-body path used by the OpenAI SDK; leave Request objects and non-string bodies alone.
+		if (init === undefined || typeof init.body !== "string") return init;
+
+		let inputUrl: string;
+		if (typeof input === "string") inputUrl = input;
+		else if (input instanceof URL) inputUrl = input.toString();
+		else if (input instanceof Request) inputUrl = input.url;
+		else return init;
+
+		if (inputUrl.endsWith("/chat/completions") === false) return init;
+
+		try {
+			const parsed = JSON.parse(init.body);
+			if (parsed?.stream !== true) return init;
+			if (parsed.stream_options?.include_usage === true) return init;
+
+			parsed.stream_options = { ...(parsed.stream_options ?? {}), include_usage: true };
+			return { ...init, body: JSON.stringify(parsed) };
+		} catch {
+			return init;
+		}
 	}
 
 }

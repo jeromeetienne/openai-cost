@@ -170,19 +170,28 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 		}
 
 		const isEmbeddingsEndpoint = inputUrl.endsWith("/embeddings");
+		const isChatCompletionsEndpoint = inputUrl.endsWith("/chat/completions");
 
 
 		// Try to parse content type to determine how to extract usage information, and handle accordingly
 		if (contentType !== null) {
 			// handle if content-type is text/event-stream (for streamed responses)
 			if (contentType.includes("text/event-stream")) {
-				await this._trackerCallback_Responses_EventStream(bucketId, response);
+				if (isChatCompletionsEndpoint) {
+					await this._trackerCallback_ChatCompletions_EventStream(bucketId, response);
+				} else {
+					await this._trackerCallback_Responses_EventStream(bucketId, response);
+				}
 				return
 			}
 
 			// handle if content-type is application/json (for non-streamed responses)
 			if (contentType.includes("application/json") && isEmbeddingsEndpoint === false) {
-				await this._trackerCallback_Responses_ApplicationJson(bucketId, response);
+				if (isChatCompletionsEndpoint) {
+					await this._trackerCallback_ChatCompletions_ApplicationJson(bucketId, response);
+				} else {
+					await this._trackerCallback_Responses_ApplicationJson(bucketId, response);
+				}
 				return
 			}
 
@@ -248,7 +257,6 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 			// Process each complete SSE event
 			const eventNameReponseCompleted = "response.completed";
 			for (const event of eventContents) {
-				// FIXME this works IIF using .responses API
 				const eventLines = event.split("\n");
 				// test if there is a line "event: response_completed\n" in the event content, which indicates the end of the stream 
 				// and contains the usage information in the data field
@@ -296,6 +304,117 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 		}
 	}
 
+
+	/**
+	 * Parse a streamed chat.completions SSE response and track its cost.
+	 * Chat.completions streams are a sequence of unnamed `data: {...}` JSON chunks terminated by `data: [DONE]`.
+	 * Usage is only present when the caller (or our fetch wrapper) set `stream_options.include_usage = true`,
+	 * and appears on the last chunk (with an empty `choices` array).
+	 */
+	private async _trackerCallback_ChatCompletions_EventStream(bucketId: string, response: Response): Promise<void> {
+		const contentType = response.headers.get("Content-Type")
+		if (contentType === null || contentType.includes("text/event-stream") !== true) {
+			throw new Error(`Unexpected content type in response for bucketId ${bucketId}: expected "text/event-stream", got ${contentType}`);
+		}
+
+		if (response.body === null) {
+			throw new Error(`Response body is null for bucketId ${bucketId}`);
+		}
+
+		const streamReader = response.body!.getReader();
+		const textDecoder = new TextDecoder();
+
+		let receivedBuffer: string = "";
+		let lastModelName: string | undefined;
+		let lastUsage: OpenAI.CompletionUsage | undefined;
+
+		while (true) {
+			const { done, value } = await streamReader.read();
+			if (done) break;
+
+			receivedBuffer += textDecoder.decode(value, { stream: true });
+
+			const eventContents = receivedBuffer.split("\n\n");
+			receivedBuffer = eventContents.pop() || "";
+
+			for (const event of eventContents) {
+				const eventLines = event.split("\n");
+				const dataLine = eventLines.find(line => line.startsWith("data: "));
+				if (dataLine === undefined) continue;
+
+				const dataJsonStr = dataLine.replace("data: ", "").trim();
+				// Skip the SSE terminator emitted by chat.completions streams
+				if (dataJsonStr === "[DONE]") continue;
+
+				let chunk: OpenAI.ChatCompletionChunk;
+				try {
+					chunk = JSON.parse(dataJsonStr);
+				} catch (error) {
+					throw new Error(`Could not parse data JSON in chat.completions stream for bucketId ${bucketId}: ${error}`);
+				}
+
+				if (chunk.model) lastModelName = chunk.model;
+				if (chunk.usage) lastUsage = chunk.usage;
+			}
+		}
+
+		if (lastUsage === undefined || lastModelName === undefined) {
+			// Chat.completions streams only emit usage when `stream_options.include_usage` is true.
+			// The fetch wrapper auto-injects this, so reaching here usually means the user bypassed it (e.g. by
+			// passing a pre-built Request object) or the request body wasn't a JSON string.
+			console.warn(`Could not extract usage from chat.completions stream for bucketId ${bucketId}. Pass \`stream_options: { include_usage: true }\` on the request.`);
+			return;
+		}
+
+		const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
+		const responsesUsage = OpenAiCostTrackerSqlite._chatUsageToResponsesUsage(lastUsage);
+		const costResponse = await OpenAiCostCalculator.calculateLlmCost(lastModelName, responsesUsage);
+		await this._trackerCallbackPostProcess(bucketId, costResponse, lastModelName, isFromCache);
+	}
+
+	/**
+	 * Parse a non-streamed chat.completions JSON response and track its cost.
+	 */
+	private async _trackerCallback_ChatCompletions_ApplicationJson(bucketId: string, response: Response): Promise<void> {
+		const contentType = response.headers.get("Content-Type")
+		if (contentType === null || contentType.includes("application/json") !== true) {
+			throw new Error(`Unexpected content type in response for bucketId ${bucketId}: expected "application/json", got ${contentType}`);
+		}
+
+		const responseBodyJson = await response.json().catch(() => null);
+		const modelName: string | undefined = responseBodyJson?.model;
+		const chatUsage: OpenAI.CompletionUsage | undefined = responseBodyJson?.usage;
+
+		if (chatUsage === undefined || modelName === undefined) {
+			console.warn(`Could not extract usage information from chat.completions response for trackerId ${bucketId}`);
+			return;
+		}
+
+		const isFromCache = response.headers.get(OpenAICache.MARK_RESPONSE_NAME) === "true";
+		const responsesUsage = OpenAiCostTrackerSqlite._chatUsageToResponsesUsage(chatUsage);
+		const costResponse = await OpenAiCostCalculator.calculateLlmCost(modelName, responsesUsage);
+		await this._trackerCallbackPostProcess(bucketId, costResponse, modelName, isFromCache);
+	}
+
+	/**
+	 * Convert a chat.completions `CompletionUsage` to the `Responses.ResponseUsage` shape expected by the calculator.
+	 *
+	 * The calculator bills `input_tokens` at the full input rate and `input_tokens_details.cached_tokens` at the
+	 * cache rate separately, so `input_tokens` must be the NON-cached portion. Chat.completions' `prompt_tokens`
+	 * *includes* cached tokens, so we subtract.
+	 */
+	private static _chatUsageToResponsesUsage(chatUsage: OpenAI.CompletionUsage): OpenAI.Responses.ResponseUsage {
+		const cachedTokens = chatUsage.prompt_tokens_details?.cached_tokens ?? 0;
+		const reasoningTokens = chatUsage.completion_tokens_details?.reasoning_tokens ?? 0;
+
+		return {
+			input_tokens: chatUsage.prompt_tokens - cachedTokens,
+			output_tokens: chatUsage.completion_tokens,
+			total_tokens: chatUsage.total_tokens,
+			input_tokens_details: { cached_tokens: cachedTokens },
+			output_tokens_details: { reasoning_tokens: reasoningTokens },
+		};
+	}
 
 	/**
 	 * Callback to track OpenAI API costs and store in SQLite
