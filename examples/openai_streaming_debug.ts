@@ -59,7 +59,7 @@ async function main() {
 		fetch: fetchWithTracking
 	});
 
-	if (true) {
+	if (false) {
 		// Streaming using the responses API, which is the recommended way to do streaming calls with the new OpenAI client. 
 		// This allows us to track usage and costs in real - time as the stream progresses.
 		const stream = await openaiClient.responses.create({
@@ -74,10 +74,10 @@ async function main() {
 		}
 	}
 
-	if (false) {
+	if (true) {
 		// Streaming using the chat.completions API, which also works but is not the recommended way to do streaming calls with the new OpenAI client.
 		const stream = await openaiClient.chat.completions.create({
-			model: "gpt-4o-nano",
+			model: "gpt-4.1-nano",
 			messages: [
 				{
 					role: "user",

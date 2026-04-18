@@ -7,10 +7,8 @@ import OpenAICache from "openai-cache";
 import KeyvSqlite from '@keyv/sqlite';
 import { Cacheable } from "cacheable";
 import Chalk from "chalk";
-import { CreateEmbeddingResponse } from "openai/resources";
 
 // local imports
-import { OpenAiCostCalculator, OpenAiCostResponse } from "../src/openai_cost_calculator";
 import { ExampleHelper } from "./libs/example_helper";
 
 ///////////////////////////////////////////////////////////////////////////////
