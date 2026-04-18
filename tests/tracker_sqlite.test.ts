@@ -11,7 +11,8 @@ import { Cacheable } from "cacheable";
 // local imports
 import { OpenAiCostCalculator } from "../src/openai_cost_calculator";
 import { OpenAiCostTracker } from "../src/openai_cost_tracker";
-import { OpenAiCostTrackerSqlite, OpenAiCostTrackerSqliteEntry } from "../src/trackers/tracker_sqlite/tracker_sqlite";
+import { OpenAiCostTrackerSqlite } from "../src/trackers/tracker_sqlite/tracker_sqlite";
+import { OpenAiCostTrackerSqliteEntry } from "../src/trackers/tracker_sqlite/tracker_sqlite_type";
 import { createTempSqlitePath, cleanupFiles, waitForEvent } from "./helpers/test_helper";
 
 ///////////////////////////////////////////////////////////////////////////////

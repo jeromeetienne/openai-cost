@@ -63,7 +63,7 @@ describe("Integration: non-streamed call", { skip: !hasApiKey ? "OPENAI_API_KEY 
 		Assert.ok(usage.input_tokens > 0, "Expected input_tokens > 0");
 		Assert.ok(usage.output_tokens > 0, "Expected output_tokens > 0");
 
-		const cost = await OpenAiCostCalculator.calculateCost("gpt-4.1-nano", usage);
+		const cost = await OpenAiCostCalculator.calculateLlmCost("gpt-4.1-nano", usage);
 		Assert.ok(cost.totalCost > 0, `Expected totalCost > 0, got ${cost.totalCost}`);
 		Assert.ok(cost.inputCost >= 0);
 		Assert.ok(cost.outputCost >= 0);
@@ -103,7 +103,7 @@ describe("Integration: streamed call", { skip: !hasApiKey ? "OPENAI_API_KEY not 
 		Assert.ok(usage.input_tokens > 0, "Expected input_tokens > 0");
 		Assert.ok(usage.output_tokens > 0, "Expected output_tokens > 0");
 
-		const cost = await OpenAiCostCalculator.calculateCost("gpt-4.1-nano", usage);
+		const cost = await OpenAiCostCalculator.calculateLlmCost("gpt-4.1-nano", usage);
 		Assert.ok(cost.totalCost > 0, `Expected totalCost > 0, got ${cost.totalCost}`);
 	});
 });
