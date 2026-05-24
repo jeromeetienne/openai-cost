@@ -41,7 +41,7 @@ export class ExampleHelper {
 
 		// calculate the cost of the API call using the OpenAiCostCalculator
 		const openaiResponseUsage: OpenAI.Responses.ResponseUsage = response1.usage!
-		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiResponseUsage);
+		const costResponse = await OpenAiCostCalculator.calculateLlmCost(modelName, openaiResponseUsage);
 		// measure call elapsed time
 		const callElapsed = Date.now() - callStart;
 
@@ -96,7 +96,7 @@ export class ExampleHelper {
 		const openaiResponseUsage: OpenAI.Responses.ResponseUsage = responseCompletedEvent.response.usage!
 
 		// calculate the cost of the API call using the OpenAiCostCalculator
-		const costResponse = await OpenAiCostCalculator.calculateCost(modelName, openaiResponseUsage);
+		const costResponse = await OpenAiCostCalculator.calculateLlmCost(modelName, openaiResponseUsage);
 		// measure call elapsed time
 		const callElapsed = Date.now() - callStart;
 

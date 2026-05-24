@@ -45,7 +45,7 @@ const response = await openaiClient.responses.create({
 });
 
 const usage = response.usage!;
-const cost = await OpenAiCostCalculator.calculateCost(modelName, usage);
+const cost = await OpenAiCostCalculator.calculateLlmCost(modelName, usage);
 
 console.log(cost);
 // {
@@ -58,12 +58,12 @@ console.log(cost);
 
 ## API
 
-### `OpenAiCostCalculator.calculateCost(modelName, usage, priorityType?)`
+### `OpenAiCostCalculator.calculateLlmCost(modelName, usage, priorityType?)`
 
 Signature:
 
 ```ts
-calculateCost(
+calculateLlmCost(
 	modelName: string,
 	openaiUsage: OpenAI.Responses.ResponseUsage,
 	priorityType: "batch" | "flex" | "standard" | "priority" = "standard"
