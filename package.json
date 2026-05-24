@@ -11,6 +11,9 @@
             "default": "./dist/index.js"
         }
     },
+    "bin": {
+        "openai_cost_pp": "./dist/trackers/tracker_sqlite/bin/tracker_sqlite_pp.js"
+    },
     "files": [
         "dist",
         "README.md"
@@ -54,16 +57,17 @@
         "@keyv/sqlite": "^4.0.8",
         "@types/better-sqlite3": "^7.6.13",
         "@types/node": "^25.4.0",
-        "chalk": "^5.6.2",
         "tsx": "^4.21.0",
         "typescript": "^6.0.2"
     },
     "dependencies": {
         "better-sqlite3": "^12.8.0",
         "cacheable": "^2.3.4",
+        "chalk": "^4.1.2",
         "commander": "^14.0.3",
         "minimatch": "^10.2.5",
         "openai": "^6.27.0",
-        "openai-cache": "^1.0.35"
+        "openai-cache": "^1.0.35",
+        "strip-ansi": "^6.0.1"
     }
 }

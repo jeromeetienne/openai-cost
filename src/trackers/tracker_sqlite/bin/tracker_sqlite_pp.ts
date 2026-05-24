@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // npm imports
 import * as Commander from "commander";
 import Chalk from "chalk";
