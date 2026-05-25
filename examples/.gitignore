@@ -6,3 +6,4 @@
 
 # ignore OpenAICostTrackerSqlite
 .openai_cost_tracker.sqlite
+.openai_cost_tracker_multi_provider.sqlite

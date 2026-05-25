@@ -35,14 +35,16 @@ export class OpenAiSqliteCostSummaryHelper {
 		summaryBucketA: OpenAiCostTrackerSqliteBucketCost,
 		summaryBucketB: OpenAiCostTrackerSqliteBucketCost
 	): Promise<OpenAiCostTrackerSqliteBucketCost> {
-		// combine models from both buckets
+		// combine models from both buckets; keyed by (provider, modelName) so the same model name
+		// served by different providers (e.g. an OpenAI-hosted model vs. an Ollama clone) stays separate.
 		const combinedModelsMap: Record<string, OpenAiCostTrackerSqliteModelCost> = {};
 		for (const model of [...summaryBucketA.models, ...summaryBucketB.models]) {
-			if (!combinedModelsMap[model.modelName]) {
-				combinedModelsMap[model.modelName] = { modelName: model.modelName, costSpent: 0, costSaved: 0 };
+			const key = `${model.provider}::${model.modelName}`;
+			if (!combinedModelsMap[key]) {
+				combinedModelsMap[key] = { provider: model.provider, modelName: model.modelName, costSpent: 0, costSaved: 0 };
 			}
-			combinedModelsMap[model.modelName].costSpent += model.costSpent;
-			combinedModelsMap[model.modelName].costSaved += model.costSaved;
+			combinedModelsMap[key].costSpent += model.costSpent;
+			combinedModelsMap[key].costSaved += model.costSaved;
 		}
 
 		const combinedModels = Object.values(combinedModelsMap);
@@ -174,6 +176,7 @@ export class OpenAiSqliteCostSummaryHelper {
 			outputLines.push(`   Total - Cost Spent: ${bucketSpentStr}, Cost Saved: ${bucketSavedStr}`);
 
 			for (const model of bucket.models) {
+				const providerLabel = colorize ? Chalk.magenta(model.provider) : model.provider;
 				const modelStr = colorize ? Chalk.blue(model.modelName) : model.modelName;
 
 				const modelCostSpentStr = (Math.ceil(model.costSpent * 1e6) / 1e6).toFixed(6);
@@ -182,7 +185,7 @@ export class OpenAiSqliteCostSummaryHelper {
 				const modelSavedStr = colorize ? Chalk.green(`$${modelCostSavedStr}`) : `$${modelCostSavedStr}`;
 
 				outputLines.push(
-					`   Model: ${modelStr} - Cost Spent: ${modelSpentStr}, Cost Saved: ${modelSavedStr}`
+					`   Model: ${providerLabel} · ${modelStr} - Cost Spent: ${modelSpentStr}, Cost Saved: ${modelSavedStr}`
 				);
 			}
 		}
@@ -194,13 +197,13 @@ export class OpenAiSqliteCostSummaryHelper {
 	 * Convert cost tracking records to CSV format
 	 */
 	static recordsToCsv(records: OpenAiCostTrackerSqliteEntry[]): string {
+		const header = "dateIso,bucketId,provider,modelName,costSpent,costSaved";
 		if (records.length === 0) {
-			return "dateIso,bucketId,modelName,costSpent,costSaved\n";
+			return `${header}\n`;
 		}
 
-		const header = "dateIso,bucketId,modelName,costSpent,costSaved";
 		const rows = records.map(record => {
-			return `${record.dateIso},${record.bucketId},${record.modelName},${record.costSpent},${record.costSaved}`;
+			return `${record.dateIso},${record.bucketId},${record.provider},${record.modelName},${record.costSpent},${record.costSaved}`;
 		});
 
 		return [header, ...rows].join("\n");

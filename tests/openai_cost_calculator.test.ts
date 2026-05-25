@@ -172,18 +172,18 @@ describe('OpenAiSqliteCostSummaryHelper.recordsToCsv', () => {
 
 	it('returns CSV with header and data rows', () => {
 		const records = [
-			{ dateIso: '2025-01-01T00:00:00.000Z', bucketId: 'test-bucket', modelName: 'gpt-4.1-nano', costSpent: 0.001, costSaved: 0 },
-			{ dateIso: '2025-01-01T00:00:01.000Z', bucketId: 'test-bucket', modelName: 'gpt-4.1-nano', costSpent: 0, costSaved: 0.001 },
+			{ dateIso: '2025-01-01T00:00:00.000Z', bucketId: 'test-bucket', provider: 'openai' as const, modelName: 'gpt-4.1-nano', costSpent: 0.001, costSaved: 0 },
+			{ dateIso: '2025-01-01T00:00:01.000Z', bucketId: 'test-bucket', provider: 'openai' as const, modelName: 'gpt-4.1-nano', costSpent: 0, costSaved: 0.001 },
 		];
 		const csv = OpenAiSqliteCostSummaryHelper.recordsToCsv(records);
 		const lines = csv.split('\n');
 
-		Assert.strictEqual(lines[0], 'dateIso,bucketId,modelName,costSpent,costSaved');
+		Assert.strictEqual(lines[0], 'dateIso,bucketId,provider,modelName,costSpent,costSaved');
 		Assert.strictEqual(lines.length, 3); // header + 2 data rows
 	});
 
 	it('returns header-only for empty array', () => {
 		const csv = OpenAiSqliteCostSummaryHelper.recordsToCsv([]);
-		Assert.strictEqual(csv, 'dateIso,bucketId,modelName,costSpent,costSaved\n');
+		Assert.strictEqual(csv, 'dateIso,bucketId,provider,modelName,costSpent,costSaved\n');
 	});
 });

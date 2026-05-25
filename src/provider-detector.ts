@@ -1,0 +1,40 @@
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//	type
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+export type ProviderId = 'openai' | 'gemini' | 'ollama' | 'lmstudio';
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//	ProviderDetector
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+export class ProviderDetector {
+	/**
+	 * Detect which OpenAI-compatible provider a request is targeting based on its URL.
+	 *
+	 * The OpenAI SDK forwards its configured `baseURL` to every fetch call, so the host of
+	 * the captured request URL is enough to identify the provider without any caller config.
+	 *
+	 * Falls back to `'openai'` for unknown hosts so custom proxies and Azure OpenAI keep
+	 * working as before.
+	 */
+	static fromUrl(inputUrl: string): ProviderId {
+		let host: string;
+		try {
+			host = new URL(inputUrl).host.toLowerCase();
+		} catch {
+			return 'openai';
+		}
+
+		if (host.endsWith('googleapis.com')) return 'gemini';
+		// Ollama default server port
+		if (host.endsWith(':11434')) return 'ollama';
+		// LMStudio default server port
+		if (host.endsWith(':1234')) return 'lmstudio';
+		return 'openai';
+	}
+}
