@@ -198,10 +198,11 @@ async function main() {
 
 	// Print summary if requested
 	if (options.watch !== true && options.output_csv === undefined) {
-		await MainHelper.doPrettyPrint(options.input_path, {
+		const outputStr = await MainHelper.doPrettyPrint(options.input_path, {
 			patternDefinition: options.patternDefinition,
 			patternVariables: patternVariables,
 		});
+		console.log(outputStr);
 	} else if (options.watch === true) {
 		await MainHelper.doWatch(options.input_path, {
 			patternDefinition: options.patternDefinition,
