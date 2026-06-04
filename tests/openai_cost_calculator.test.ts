@@ -52,14 +52,30 @@ describe('OpenAiCostCalculator.calculateLlmCost', () => {
 		Assert.strictEqual(cost.totalCost, 0.5);
 	});
 
-	it('calculates cost with cached input tokens', async () => {
-		// pricing for gpt-4.1-nano: cacheInput=0.025/1M
+	it('calculates cost with cached input tokens (cached is a subset of input, billed once)', async () => {
+		// pricing for gpt-4.1-nano: input=0.1/1M, cacheInput=0.025/1M, output=0.4/1M.
+		// cached_tokens (200) is a SUBSET of input_tokens (500): 300 uncached billed at full rate,
+		// 200 cached billed at the cache rate. The cached portion must NOT also be billed at the full rate.
 		const usage = createResponseUsage({ input_tokens: 500, output_tokens: 100, cached_tokens: 200 });
 		const cost = await OpenAiCostCalculator.calculateLlmCost('gpt-4.1-nano', usage);
 
-		Assert.ok(cost.cacheInputCost > 0, `Expected cacheInputCost > 0, got ${cost.cacheInputCost}`);
-		Assert.ok(cost.inputCost > 0);
-		Assert.ok(cost.totalCost > 0);
+		Assert.ok(Math.abs(cost.inputCost - 0.00003) < 1e-12, `Expected inputCost 0.00003, got ${cost.inputCost}`);
+		Assert.ok(Math.abs(cost.cacheInputCost - 0.000005) < 1e-12, `Expected cacheInputCost 0.000005, got ${cost.cacheInputCost}`);
+		Assert.ok(Math.abs(cost.outputCost - 0.00004) < 1e-12, `Expected outputCost 0.00004, got ${cost.outputCost}`);
+		// 0.000075, not the double-counted 0.000095 the old logic produced.
+		Assert.ok(Math.abs(cost.totalCost - 0.000075) < 1e-12, `Expected totalCost 0.000075, got ${cost.totalCost}`);
+	});
+
+	it('does not let cached tokens inflate the context tier (cached is a subset of input)', async () => {
+		// gpt-5.4 tier threshold is 272K, measured on input_tokens (which already includes cached).
+		// 250K input incl 100K cached stays under 272K -> <272K pricing (input=2.5/1M).
+		// The old logic added cached to input (350K) and wrongly picked the >272K tier (input=5.0/1M).
+		const usage = createResponseUsage({ input_tokens: 250_000, output_tokens: 500, cached_tokens: 100_000 });
+		const cost = await OpenAiCostCalculator.calculateLlmCost('gpt-5.4', usage);
+
+		// uncached 150K at 2.5/1M = 0.375
+		const expectedInputCost = (150_000 / 1_000_000) * 2.5;
+		Assert.ok(Math.abs(cost.inputCost - expectedInputCost) < 1e-10, `Expected inputCost ~${expectedInputCost} (<272K tier), got ${cost.inputCost}`);
 	});
 
 	it('throws for unknown model name', async () => {

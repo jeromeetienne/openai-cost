@@ -404,16 +404,17 @@ export class OpenAiCostTrackerSqlite extends EventEmitter {
 	/**
 	 * Convert a chat.completions `CompletionUsage` to the `Responses.ResponseUsage` shape expected by the calculator.
 	 *
-	 * The calculator bills `input_tokens` at the full input rate and `input_tokens_details.cached_tokens` at the
-	 * cache rate separately, so `input_tokens` must be the NON-cached portion. Chat.completions' `prompt_tokens`
-	 * *includes* cached tokens, so we subtract.
+	 * In both APIs the cached tokens are a SUBSET of the total prompt/input tokens: chat.completions'
+	 * `prompt_tokens` already includes `prompt_tokens_details.cached_tokens`, mirroring the Responses API where
+	 * `input_tokens` includes `input_tokens_details.cached_tokens`. The calculator splits the cached subset out
+	 * internally, so we pass `prompt_tokens` through as `input_tokens` unchanged (do NOT subtract cached).
 	 */
 	private static _chatUsageToResponsesUsage(chatUsage: OpenAI.CompletionUsage): OpenAI.Responses.ResponseUsage {
 		const cachedTokens = chatUsage.prompt_tokens_details?.cached_tokens ?? 0;
 		const reasoningTokens = chatUsage.completion_tokens_details?.reasoning_tokens ?? 0;
 
 		return {
-			input_tokens: chatUsage.prompt_tokens - cachedTokens,
+			input_tokens: chatUsage.prompt_tokens,
 			output_tokens: chatUsage.completion_tokens,
 			total_tokens: chatUsage.total_tokens,
 			input_tokens_details: { cached_tokens: cachedTokens },

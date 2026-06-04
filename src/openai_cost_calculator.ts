@@ -64,8 +64,9 @@ export class OpenAiCostCalculator {
 	): Promise<OpenAiCostResponse> {
 
 		// Normalize the model name for context-tier-priced models (OpenAI gpt-5.4 / gpt-5.4-pro at 272K,
-		// Gemini gemini-2.5-pro / gemini-3.1-pro-preview at 200K). The tier is picked from the total input token count.
-		const totalInputTokens = openaiUsage.input_tokens + (openaiUsage.input_tokens_details?.cached_tokens || 0);
+		// Gemini gemini-2.5-pro / gemini-3.1-pro-preview at 200K). The tier is picked from the input token
+		// count, which already includes the cached subset (do NOT add cached_tokens again).
+		const totalInputTokens = openaiUsage.input_tokens;
 		modelName = OpenAiCostCalculator._applyContextTierSuffix(provider, modelName, totalInputTokens);
 
 		// Remove date suffix from modelName if present, to match pricing keys.
@@ -87,12 +88,18 @@ export class OpenAiCostCalculator {
 			: undefined;
 		const outputRate = basePricing.outputPer1MTokens * priorityMultiplier;
 
-		// NOTE: `.cached_tokens` are NOT included in `.input_tokens`; both are billed.
+		// `.cached_tokens` is a SUBSET of `.input_tokens` (the prompt-cache hit portion), billed at a
+		// discount. Bill the uncached portion at the full input rate and the cached portion at the cache
+		// rate. When the model has no separate cache pricing, cached tokens are billed as normal input.
 		// Reasoning tokens are included in `.output_tokens` and billed as output tokens.
-		const inputCost = (openaiUsage.input_tokens / 1_000_000) * inputRate;
+		const cachedTokens = openaiUsage.input_tokens_details?.cached_tokens ?? 0;
+		let inputCost: number;
 		let cacheInputCost = 0;
-		if (cacheRate !== undefined && openaiUsage.input_tokens_details?.cached_tokens !== undefined) {
-			cacheInputCost = (openaiUsage.input_tokens_details.cached_tokens / 1_000_000) * cacheRate;
+		if (cacheRate !== undefined) {
+			inputCost = ((openaiUsage.input_tokens - cachedTokens) / 1_000_000) * inputRate;
+			cacheInputCost = (cachedTokens / 1_000_000) * cacheRate;
+		} else {
+			inputCost = (openaiUsage.input_tokens / 1_000_000) * inputRate;
 		}
 		const outputCost = (openaiUsage.output_tokens / 1_000_000) * outputRate;
 		const totalCost = inputCost + cacheInputCost + outputCost;

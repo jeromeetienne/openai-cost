@@ -241,3 +241,51 @@ describe('OpenAiCostTrackerSqlite — provider column', () => {
 		Assert.ok(ollamaRecord!.costSpent > 0, 'ollama cost must be > 0 (flat fake rate), never zero');
 	});
 });
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//	chat.completions cached-token billing (converter does not double-subtract)
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+describe('OpenAiCostTrackerSqlite — chat.completions cached tokens', () => {
+	let dbPath: string;
+	let tracker: OpenAiCostTrackerSqlite;
+
+	after(async () => {
+		if (tracker) await tracker.close();
+		if (dbPath) cleanupFiles(dbPath);
+	});
+
+	it('bills cached prompt tokens once at the cache rate (prompt_tokens already includes cached)', async () => {
+		dbPath = createTempSqlitePath('chat-cached');
+		tracker = new OpenAiCostTrackerSqlite(dbPath);
+		await tracker.init();
+
+		const callback = await tracker.getTrackerCallback();
+
+		// gpt-4o: input=2.5/1M, cacheInput=1.25/1M, output=10/1M.
+		// prompt_tokens (1000) INCLUDES the cached subset (800) -> 200 uncached @2.5, 800 cached @1.25.
+		const body = JSON.stringify({
+			model: 'gpt-4o',
+			choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: 'hi' } }],
+			usage: {
+				prompt_tokens: 1000,
+				completion_tokens: 500,
+				total_tokens: 1500,
+				prompt_tokens_details: { cached_tokens: 800 },
+			},
+		});
+		const response = new Response(body, { headers: { 'Content-Type': 'application/json' } });
+
+		await callback('bucket-cached', 'https://api.openai.com/v1/chat/completions', undefined, response);
+
+		const records = await tracker.getAllRecords();
+		Assert.strictEqual(records.length, 1);
+
+		// inputCost 200/1e6*2.5=0.0005 + cacheInputCost 800/1e6*1.25=0.001 + outputCost 500/1e6*10=0.005 = 0.0065
+		const record = records[0];
+		Assert.strictEqual(record.provider, 'openai');
+		Assert.ok(Math.abs(record.costSpent - 0.0065) < 1e-12, `Expected costSpent 0.0065, got ${record.costSpent}`);
+	});
+});
